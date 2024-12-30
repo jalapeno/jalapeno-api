@@ -738,10 +738,15 @@ async def traverse_graph_simple(
         ) 
 
 @router.get("/collections/{collection_name}/vertices/summary")
-async def get_vertex_summary(collection_name: str, limit: int = 100):
+async def get_vertex_summary(
+    collection_name: str, 
+    limit: int = 100,
+    vertex_collection: str = None  # New optional query parameter
+):
     """
     Get summarized vertex data from any graph in the database.
     Returns only key fields that have data.
+    Optionally filter by specific vertex collection.
     """
     try:
         db = get_db()
@@ -773,9 +778,19 @@ async def get_vertex_summary(collection_name: str, limit: int = 100):
             
         vertex_collections = collections_result[0]['vertex_collections']
         
+        # If vertex_collection is specified, validate it exists in the graph
+        if vertex_collection and vertex_collection not in vertex_collections:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Vertex collection '{vertex_collection}' not found in graph. Available collections: {vertex_collections}"
+            )
+        
+        # Filter collections if vertex_collection is specified
+        collections_to_query = [vertex_collection] if vertex_collection else vertex_collections
+        
         # Now query each vertex collection
         all_vertices = []
-        for vcoll in vertex_collections:
+        for vcoll in collections_to_query:
             vertex_query = """
             FOR v IN @@collection
                 LIMIT @limit
@@ -812,6 +827,7 @@ async def get_vertex_summary(collection_name: str, limit: int = 100):
         return {
             'graph': collection_name,
             'vertex_collections': vertex_collections,
+            'filtered_collection': vertex_collection,
             'total_vertices': len(cleaned_vertices),
             'vertices': cleaned_vertices
         }
@@ -821,7 +837,7 @@ async def get_vertex_summary(collection_name: str, limit: int = 100):
         raise HTTPException(
             status_code=500,
             detail=str(e)
-        ) 
+        )
 
 # Add this at the bottom of the file
 print("\nRegistered routes in graphs.py:")
