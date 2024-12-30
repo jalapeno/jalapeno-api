@@ -1,10 +1,16 @@
 from fastapi import APIRouter, HTTPException
-from typing import List
+from typing import List, Optional, Dict, Any
 from arango import ArangoClient
 from ..config.settings import Settings
+# from ..database import get_db
 
 router = APIRouter()
 settings = Settings()
+
+# Debug print to see registered routes
+print("Available routes:")
+for route in router.routes:
+    print(f"  {route.path}")
 
 KNOWN_COLLECTIONS = {
     'graphs': [
@@ -730,3 +736,99 @@ async def traverse_graph_simple(
             status_code=500,
             detail=str(e)
         ) 
+
+@router.get("/collections/{collection_name}/vertices/summary")
+async def get_vertex_summary(collection_name: str, limit: int = 100):
+    """
+    Get summarized vertex data from any graph in the database.
+    Returns only key fields that have data.
+    """
+    try:
+        db = get_db()
+        
+        # First, get the vertex collections for this graph
+        collections_query = """
+        FOR e IN @@graph
+            COLLECT AGGREGATE 
+                from_cols = UNIQUE(PARSE_IDENTIFIER(e._from).collection),
+                to_cols = UNIQUE(PARSE_IDENTIFIER(e._to).collection)
+            RETURN {
+                vertex_collections: UNION_DISTINCT(from_cols, to_cols)
+            }
+        """
+        
+        collections_cursor = db.aql.execute(
+            collections_query,
+            bind_vars={
+                '@graph': collection_name
+            }
+        )
+        
+        collections_result = [doc for doc in collections_cursor]
+        if not collections_result:
+            raise HTTPException(
+                status_code=404,
+                detail=f"No vertex collections found for graph {collection_name}"
+            )
+            
+        vertex_collections = collections_result[0]['vertex_collections']
+        
+        # Now query each vertex collection
+        all_vertices = []
+        for vcoll in vertex_collections:
+            vertex_query = """
+            FOR v IN @@collection
+                LIMIT @limit
+                RETURN {
+                    collection: @collection_name,
+                    _key: v._key,
+                    _id: v._id,
+                    name: HAS(v, 'name') ? v.name : null,
+                    prefix: HAS(v, 'prefix') ? v.prefix : null,
+                    sids: HAS(v, 'sids') ? v.sids[*].srv6_sid : null,
+                    protocol: HAS(v, 'protocol') ? v.protocol : null,
+                    asn: HAS(v, 'asn') ? v.asn : null
+                }
+            """
+            
+            vertex_cursor = db.aql.execute(
+                vertex_query,
+                bind_vars={
+                    '@collection': vcoll,
+                    'collection_name': vcoll,
+                    'limit': limit
+                }
+            )
+            
+            vertices = [doc for doc in vertex_cursor]
+            all_vertices.extend(vertices)
+        
+        # Remove null fields from the response
+        cleaned_vertices = []
+        for vertex in all_vertices:
+            cleaned_vertex = {k: v for k, v in vertex.items() if v is not None}
+            cleaned_vertices.append(cleaned_vertex)
+        
+        return {
+            'graph': collection_name,
+            'vertex_collections': vertex_collections,
+            'total_vertices': len(cleaned_vertices),
+            'vertices': cleaned_vertices
+        }
+        
+    except Exception as e:
+        print(f"Error getting vertex summary: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=str(e)
+        ) 
+
+# Add this at the bottom of the file
+print("\nRegistered routes in graphs.py:")
+for route in router.routes:
+    print(f"  {route.methods} {route.path}")
+
+# Test route to verify routing is working
+@router.get("/api/v1/test")
+async def test_route():
+    return {"message": "Test route working"} 

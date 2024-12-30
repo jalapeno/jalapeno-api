@@ -126,3 +126,16 @@ curl "http://localhost:8000/api/v1/collections/ipv6_graph/neighbors?source=ls_no
 
 #### Get neighbors with greater depth
 curl "http://localhost:8000/api/v1/collections/ipv6_graph/neighbors?source=ls_node_extended/2_0_0_0000.0001.0065&depth=2"
+
+
+### Graph summary
+#### Basic usage
+curl http://localhost:8000/api/v1/collections/ipv6_graph/vertices/summary
+
+#### With limit
+curl http://localhost:8000/api/v1/collections/ipv6_graph/vertices/summary?limit=25
+
+#### Works with any graph
+curl http://localhost:8000/api/v1/collections/ipv4_graph/vertices/summary
+curl http://localhost:8000/api/v1/collections/lsv4_graph/vertices/summary
+curl http://localhost:8000/api/v1/collections/lsv6_graph/vertices/summary
