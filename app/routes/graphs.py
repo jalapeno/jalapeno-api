@@ -49,9 +49,13 @@ def get_db():
         )
 
 @router.get("/collections")
-async def get_all_collections():
+async def get_collections(filter_graphs: Optional[bool] = None):
     """
-    Get a list of all collections in the database
+    Get a list of collections in the database
+    Optional: filter_graphs parameter:
+    - None (default): show all collections
+    - True: show only graph collections
+    - False: show only non-graph collections
     """
     try:
         db = get_db()
@@ -59,6 +63,7 @@ async def get_all_collections():
         collections = db.collections()
         
         # Filter out system collections (those starting with '_')
+        # Then apply graph filter if specified
         user_collections = [
             {
                 'name': c['name'],
@@ -67,12 +72,19 @@ async def get_all_collections():
                 'count': db.collection(c['name']).count()
             }
             for c in collections
-            if not c['name'].startswith('_')
+            if not c['name'].startswith('_') and 
+               (filter_graphs is None or  # Show all if no filter
+                (filter_graphs and c['name'].endswith('_graph')) or  # Only graphs
+                (not filter_graphs and not c['name'].endswith('_graph')))  # Only non-graphs
         ]
+        
+        # Sort by name
+        user_collections.sort(key=lambda x: x['name'])
         
         return {
             'collections': user_collections,
-            'total_count': len(user_collections)
+            'total_count': len(user_collections),
+            'filter_applied': 'all' if filter_graphs is None else ('graphs' if filter_graphs else 'non_graphs')
         }
     except Exception as e:
         raise HTTPException(
@@ -838,41 +850,6 @@ async def get_vertex_summary(
         
     except Exception as e:
         print(f"Error getting vertex summary: {str(e)}")
-        raise HTTPException(
-            status_code=500,
-            detail=str(e)
-        )
-
-@router.get("/collections/graphs")
-async def get_graph_collections():
-    """
-    Get a list of all collections that end with '_graph'
-    """
-    try:
-        db = get_db()
-        # Get all collections
-        collections = db.collections()
-        
-        # Filter out system collections and keep only graph collections
-        graph_collections = [
-            {
-                'name': c['name'],
-                'type': c['type'],
-                'status': c['status'],
-                'count': db.collection(c['name']).count()
-            }
-            for c in collections
-            if not c['name'].startswith('_') and c['name'].endswith('_graph')
-        ]
-        
-        # Sort by name
-        graph_collections.sort(key=lambda x: x['name'])
-        
-        return {
-            'collections': graph_collections,
-            'total_count': len(graph_collections)
-        }
-    except Exception as e:
         raise HTTPException(
             status_code=500,
             detail=str(e)

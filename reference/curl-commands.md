@@ -143,3 +143,13 @@ curl http://localhost:8000/api/v1/collections/lsv6_graph/vertices/summary
 curl http://localhost:8000/api/v1/collections/ipv6_graph/vertices/summary
 curl http://localhost:8000/api/v1/collections/ipv6_graph/vertices/summary?vertex_collection=ls_node_extended
 curl http://localhost:8000/api/v1/collections/ipv6_graph/vertices/summary?vertex_collection=ls_node_extended&limit=10
+
+
+# Get all collections
+curl http://localhost:8000/api/v1/collections
+
+# Get only graph collections
+curl http://localhost:8000/api/v1/collections?filter_graphs=true
+
+# Get only non-graph collections
+curl http://localhost:8000/api/v1/collections?filter_graphs=false
