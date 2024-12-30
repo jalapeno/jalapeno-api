@@ -2,7 +2,11 @@ from fastapi import APIRouter, HTTPException
 from typing import List, Optional, Dict, Any
 from arango import ArangoClient
 from ..config.settings import Settings
-# from ..database import get_db
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 settings = Settings()
@@ -834,6 +838,41 @@ async def get_vertex_summary(
         
     except Exception as e:
         print(f"Error getting vertex summary: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=str(e)
+        )
+
+@router.get("/collections/graphs")
+async def get_graph_collections():
+    """
+    Get a list of all collections that end with '_graph'
+    """
+    try:
+        db = get_db()
+        # Get all collections
+        collections = db.collections()
+        
+        # Filter out system collections and keep only graph collections
+        graph_collections = [
+            {
+                'name': c['name'],
+                'type': c['type'],
+                'status': c['status'],
+                'count': db.collection(c['name']).count()
+            }
+            for c in collections
+            if not c['name'].startswith('_') and c['name'].endswith('_graph')
+        ]
+        
+        # Sort by name
+        graph_collections.sort(key=lambda x: x['name'])
+        
+        return {
+            'collections': graph_collections,
+            'total_count': len(graph_collections)
+        }
+    except Exception as e:
         raise HTTPException(
             status_code=500,
             detail=str(e)
