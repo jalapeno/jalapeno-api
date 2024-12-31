@@ -48,6 +48,10 @@ def get_db():
             detail=f"Could not connect to database: {str(e)}"
         )
 
+###################
+# Collection Routes
+###################
+
 @router.get("/collections")
 async def get_collections(filter_graphs: Optional[bool] = None):
     """
@@ -171,58 +175,9 @@ async def get_collection_info(collection_name: str):
             detail=str(e)
         )
 
-@router.get("/collections/{collection_name}/edges")
-async def get_edge_connections(collection_name: str):
-    """
-    Get only the _from and _to fields from a graph collection
-    """
-    try:
-        db = get_db()
-        if not db.has_collection(collection_name):
-            raise HTTPException(
-                status_code=404,
-                detail=f"Collection {collection_name} not found"
-            )
-        
-        collection = db.collection(collection_name)
-        
-        # Debug print
-        print(f"Collection properties: {collection.properties()}")
-        
-        # Get all edges with error handling
-        try:
-            edges = []
-            cursor = collection.all()
-            for edge in cursor:
-                if '_from' in edge and '_to' in edge:
-                    edges.append({
-                        '_from': edge['_from'],
-                        '_to': edge['_to']
-                    })
-                else:
-                    print(f"Warning: Edge missing _from or _to: {edge}")
-            
-            print(f"Found {len(edges)} edges")
-            
-            return {
-                'collection': collection_name,
-                'edge_count': len(edges),
-                'edges': edges
-            }
-            
-        except Exception as e:
-            print(f"Error processing edges: {str(e)}")
-            raise HTTPException(
-                status_code=500,
-                detail=f"Error processing edges: {str(e)}"
-            )
-            
-    except Exception as e:
-        print(f"Error in get_edge_connections: {str(e)}")
-        raise HTTPException(
-            status_code=500,
-            detail=str(e)
-        ) 
+################
+# Vertex Routes
+################
 
 @router.get("/collections/{collection_name}/vertices")
 async def get_vertex_info(collection_name: str):
@@ -295,6 +250,451 @@ async def get_vertex_info(collection_name: str):
             status_code=500,
             detail=str(e)
         ) 
+
+@router.get("/collections/{collection_name}/vertices/keys")
+async def get_vertex_keys(collection_name: str):
+    """
+    Get just the keys of vertices referenced in a graph collection
+    """
+    try:
+        db = get_db()
+        if not db.has_collection(collection_name):
+            raise HTTPException(
+                status_code=404,
+                detail=f"Collection {collection_name} not found"
+            )
+        
+        collection = db.collection(collection_name)
+        
+        # Debug print
+        print(f"Getting vertex keys for collection: {collection_name}")
+        
+        try:
+            # Get all edges to find vertex collections
+            vertex_keys = set()
+            
+            # First pass: collect all unique vertex keys from edges
+            aql = f"""
+            FOR edge IN {collection_name}
+                COLLECT AGGREGATE 
+                    from_keys = UNIQUE(PARSE_IDENTIFIER(edge._from).key),
+                    to_keys = UNIQUE(PARSE_IDENTIFIER(edge._to).key)
+                RETURN {{
+                    keys: UNION_DISTINCT(from_keys, to_keys)
+                }}
+            """
+            
+            cursor = db.aql.execute(aql)
+            results = [doc for doc in cursor]
+            
+            if results and results[0]['keys']:
+                return {
+                    'collection': collection_name,
+                    'vertex_count': len(results[0]['keys']),
+                    'vertex_keys': sorted(results[0]['keys'])
+                }
+            else:
+                return {
+                    'collection': collection_name,
+                    'vertex_count': 0,
+                    'vertex_keys': []
+                }
+            
+        except Exception as e:
+            print(f"Error processing vertex keys: {str(e)}")
+            raise HTTPException(
+                status_code=500,
+                detail=f"Error processing vertex keys: {str(e)}"
+            )
+            
+    except Exception as e:
+        print(f"Error in get_vertex_keys: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=str(e)
+        ) 
+
+@router.get("/collections/{collection_name}/vertices/ids")
+async def get_vertex_ids(collection_name: str):
+    """
+    Get both _key and _id for vertices referenced in a graph collection
+    """
+    try:
+        db = get_db()
+        if not db.has_collection(collection_name):
+            raise HTTPException(
+                status_code=404,
+                detail=f"Collection {collection_name} not found"
+            )
+        
+        # Debug print
+        print(f"Getting vertex IDs for collection: {collection_name}")
+        
+        try:
+            aql = f"""
+            FOR edge IN {collection_name}
+                COLLECT AGGREGATE 
+                    from_vertices = UNIQUE({{_id: edge._from, _key: PARSE_IDENTIFIER(edge._from).key}}),
+                    to_vertices = UNIQUE({{_id: edge._to, _key: PARSE_IDENTIFIER(edge._to).key}})
+                RETURN {{
+                    vertices: UNION_DISTINCT(from_vertices, to_vertices)
+                }}
+            """
+            
+            cursor = db.aql.execute(aql)
+            results = [doc for doc in cursor]
+            
+            if results and results[0]['vertices']:
+                # Sort by _key for consistency
+                sorted_vertices = sorted(results[0]['vertices'], key=lambda x: x['_key'])
+                return {
+                    'collection': collection_name,
+                    'vertex_count': len(sorted_vertices),
+                    'vertices': sorted_vertices
+                }
+            else:
+                return {
+                    'collection': collection_name,
+                    'vertex_count': 0,
+                    'vertices': []
+                }
+            
+        except Exception as e:
+            print(f"Error processing vertex IDs: {str(e)}")
+            raise HTTPException(
+                status_code=500,
+                detail=f"Error processing vertex IDs: {str(e)}"
+            )
+            
+    except Exception as e:
+        print(f"Error in get_vertex_ids: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=str(e)
+        ) 
+
+@router.get("/collections/{collection_name}/vertices/summary")
+async def get_vertex_summary(
+    collection_name: str, 
+    limit: int = 100,
+    vertex_collection: str = None  # New optional query parameter
+):
+    """
+    Get summarized vertex data from any graph in the database.
+    Returns only key fields that have data.
+    Optionally filter by specific vertex collection.
+    """
+    try:
+        db = get_db()
+        
+        # First, get the vertex collections for this graph
+        collections_query = """
+        FOR e IN @@graph
+            COLLECT AGGREGATE 
+                from_cols = UNIQUE(PARSE_IDENTIFIER(e._from).collection),
+                to_cols = UNIQUE(PARSE_IDENTIFIER(e._to).collection)
+            RETURN {
+                vertex_collections: UNION_DISTINCT(from_cols, to_cols)
+            }
+        """
+        
+        collections_cursor = db.aql.execute(
+            collections_query,
+            bind_vars={
+                '@graph': collection_name
+            }
+        )
+        
+        collections_result = [doc for doc in collections_cursor]
+        if not collections_result:
+            raise HTTPException(
+                status_code=404,
+                detail=f"No vertex collections found for graph {collection_name}"
+            )
+            
+        vertex_collections = collections_result[0]['vertex_collections']
+        
+        # If vertex_collection is specified, validate it exists in the graph
+        if vertex_collection and vertex_collection not in vertex_collections:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Vertex collection '{vertex_collection}' not found in graph. Available collections: {vertex_collections}"
+            )
+        
+        # Filter collections if vertex_collection is specified
+        collections_to_query = [vertex_collection] if vertex_collection else vertex_collections
+        
+        # Now query each vertex collection
+        all_vertices = []
+        for vcoll in collections_to_query:
+            vertex_query = """
+            FOR v IN @@collection
+                LIMIT @limit
+                RETURN {
+                    collection: @collection_name,
+                    _key: v._key,
+                    _id: v._id,
+                    name: HAS(v, 'name') ? v.name : null,
+                    prefix: HAS(v, 'prefix') ? v.prefix : null,
+                    sids: HAS(v, 'sids') ? v.sids[*].srv6_sid : null,
+                    protocol: HAS(v, 'protocol') ? v.protocol : null,
+                    asn: HAS(v, 'asn') ? v.asn : null
+                }
+            """
+            
+            vertex_cursor = db.aql.execute(
+                vertex_query,
+                bind_vars={
+                    '@collection': vcoll,
+                    'collection_name': vcoll,
+                    'limit': limit
+                }
+            )
+            
+            vertices = [doc for doc in vertex_cursor]
+            all_vertices.extend(vertices)
+        
+        # Remove null fields from the response
+        cleaned_vertices = []
+        for vertex in all_vertices:
+            cleaned_vertex = {k: v for k, v in vertex.items() if v is not None}
+            cleaned_vertices.append(cleaned_vertex)
+        
+        return {
+            'graph': collection_name,
+            'vertex_collections': vertex_collections,
+            'filtered_collection': vertex_collection,
+            'total_vertices': len(cleaned_vertices),
+            'vertices': cleaned_vertices
+        }
+        
+    except Exception as e:
+        print(f"Error getting vertex summary: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=str(e)
+        )
+
+################
+# Edge Routes
+################
+
+@router.get("/collections/{collection_name}/edges")
+async def get_edge_connections(collection_name: str):
+    """
+    Get only the _from and _to fields from a graph collection
+    """
+    try:
+        db = get_db()
+        if not db.has_collection(collection_name):
+            raise HTTPException(
+                status_code=404,
+                detail=f"Collection {collection_name} not found"
+            )
+        
+        collection = db.collection(collection_name)
+        
+        # Debug print
+        print(f"Collection properties: {collection.properties()}")
+        
+        # Get all edges with error handling
+        try:
+            edges = []
+            cursor = collection.all()
+            for edge in cursor:
+                if '_from' in edge and '_to' in edge:
+                    edges.append({
+                        '_from': edge['_from'],
+                        '_to': edge['_to']
+                    })
+                else:
+                    print(f"Warning: Edge missing _from or _to: {edge}")
+            
+            print(f"Found {len(edges)} edges")
+            
+            return {
+                'collection': collection_name,
+                'edge_count': len(edges),
+                'edges': edges
+            }
+            
+        except Exception as e:
+            print(f"Error processing edges: {str(e)}")
+            raise HTTPException(
+                status_code=500,
+                detail=f"Error processing edges: {str(e)}"
+            )
+            
+    except Exception as e:
+        print(f"Error in get_edge_connections: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=str(e)
+        ) 
+
+@router.get("/collections/{collection_name}/edges/detail")
+async def get_detailed_edge_connections(collection_name: str, limit: Optional[int] = None):
+    """
+    Get detailed edge information from a graph collection including metrics and properties
+    """
+    try:
+        db = get_db()
+        if not db.has_collection(collection_name):
+            raise HTTPException(
+                status_code=404,
+                detail=f"Collection {collection_name} not found"
+            )
+        
+        collection = db.collection(collection_name)
+        
+        # Get edges with additional fields
+        try:
+            edges = []
+            cursor = collection.all()
+            for edge in cursor:
+                if '_from' in edge and '_to' in edge:
+                    edge_detail = {
+                        '_key': edge.get('_key'),
+                        '_from': edge['_from'],
+                        '_to': edge['_to'],
+                        'name': edge.get('name'),
+                        'prefix': edge.get('prefix'),
+                        'protocol': edge.get('protocol'),
+                        'sids': edge.get('sids', []),
+                        'country_codes': edge.get('country_codes'),
+                        'metrics': {
+                            'unidir_delay': edge.get('unidir_link_delay'),
+                            'percent_util_out': edge.get('percent_util_out'),
+                            'percent_util_in': edge.get('percent_util_in'),
+                            'bandwidth': edge.get('max_link_bandwidth'),
+                            'reservable_bandwidth': edge.get('max_reservable_link_bandwidth'),
+                            'load': edge.get('load')
+                        },
+                        'timestamps': {
+                            'first_seen': edge.get('first_seen_at'),
+                            'last_seen': edge.get('last_seen_at'),
+                            'updated': edge.get('updated_at')
+                        }
+                    }
+                    
+                    # Remove any metrics that are None
+                    edge_detail['metrics'] = {k: v for k, v in edge_detail['metrics'].items() if v is not None}
+                    edge_detail['timestamps'] = {k: v for k, v in edge_detail['timestamps'].items() if v is not None}
+                    
+                    # Only include non-None fields
+                    edges.append({k: v for k, v in edge_detail.items() if v is not None})
+                else:
+                    print(f"Warning: Edge missing _from or _to: {edge}")
+            
+            # Apply limit if specified
+            result_edges = edges[:limit] if limit else edges
+            
+            return {
+                'collection': collection_name,
+                'edge_count': len(edges),
+                'returned_edges': len(result_edges),
+                'edges': result_edges
+            }
+            
+        except Exception as e:
+            print(f"Error processing edges: {str(e)}")
+            raise HTTPException(
+                status_code=500,
+                detail=f"Error processing edges: {str(e)}"
+            )
+            
+    except Exception as e:
+        print(f"Error in get_detailed_edge_connections: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=str(e)
+        )
+
+################
+# Topology Route
+################
+
+@router.get("/collections/{collection_name}/topology")
+async def get_topology(collection_name: str, limit: Optional[int] = None):
+    """
+    Get combined edge and vertex information from a graph collection
+    """
+    try:
+        db = get_db()
+        if not db.has_collection(collection_name):
+            raise HTTPException(
+                status_code=404,
+                detail=f"Collection {collection_name} not found"
+            )
+        
+        # Get edges first
+        collection = db.collection(collection_name)
+        edges = []
+        vertex_ids = set()  # Track all vertex IDs we need to look up
+        
+        # Get all edges and collect vertex IDs
+        cursor = collection.all()
+        for edge in cursor:
+            if '_from' in edge and '_to' in edge:
+                edges.append({
+                    '_from': edge['_from'],
+                    '_to': edge['_to']
+                })
+                vertex_ids.add(edge['_from'])
+                vertex_ids.add(edge['_to'])
+        
+        # Apply limit if specified
+        result_edges = edges[:limit] if limit else edges
+        
+        # Now get vertex details
+        vertices = {}
+        for vertex_id in vertex_ids:
+            # Parse collection name and key from vertex ID
+            collection_name, key = vertex_id.split('/')
+            
+            try:
+                vertex = db.collection(collection_name).get(key)
+                if vertex:
+                    # Build vertex details
+                    vertex_detail = {
+                        'collection': collection_name
+                    }
+                    
+                    # Add optional fields if they exist
+                    if 'name' in vertex:
+                        vertex_detail['name'] = vertex['name']
+                    if 'prefix' in vertex:
+                        vertex_detail['prefix'] = vertex['prefix']
+                    if 'protocol' in vertex:
+                        vertex_detail['protocol'] = vertex['protocol']
+                    if 'sids' in vertex:
+                        vertex_detail['sids'] = [sid.get('srv6_sid') for sid in vertex['sids'] if 'srv6_sid' in sid]
+                    if 'asn' in vertex:
+                        vertex_detail['asn'] = vertex['asn']
+                    
+                    vertices[vertex_id] = vertex_detail
+            except Exception as vertex_error:
+                print(f"Error getting vertex {vertex_id}: {str(vertex_error)}")
+                continue
+        
+        return {
+            'edges': result_edges,
+            'vertices': vertices,
+            'total_edges': len(edges),
+            'returned_edges': len(result_edges),
+            'total_vertices': len(vertices)
+        }
+            
+    except Exception as e:
+        print(f"Error in get_topology: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=str(e)
+        )
+
+##############################
+# Shortest Path and Traversals
+##############################
 
 @router.get("/collections/{collection_name}/shortest_path")
 async def get_shortest_path(
@@ -484,199 +884,6 @@ async def traverse_graph(
             detail=str(e)
         )
 
-@router.get("/collections/{collection_name}/neighbors")
-async def get_neighbors(
-    collection_name: str,
-    source: str,
-    direction: str = "outbound",  # or "inbound", "any"
-    depth: int = 1
-):
-    """
-    Get immediate neighbors of a node
-    """
-    try:
-        db = get_db()
-        if not db.has_collection(collection_name):
-            raise HTTPException(
-                status_code=404,
-                detail=f"Collection {collection_name} not found"
-            )
-        
-        # Validate direction parameter
-        if direction.lower() not in ["outbound", "inbound", "any"]:
-            raise HTTPException(
-                status_code=400,
-                detail="Direction must be 'outbound', 'inbound', or 'any'"
-            )
-        
-        # AQL query for neighbors
-        aql = f"""
-        FOR v, e, p IN 1..{depth} {direction.upper()}
-            '{source}'
-            {collection_name}
-            OPTIONS {{uniqueVertices: "path"}}
-            RETURN DISTINCT {{
-                neighbor: {{
-                    _id: v._id,
-                    _key: v._key,
-                    router_id: v.router_id,
-                    prefix: v.prefix,
-                    name: v.name,
-                    sids: v.sids[0].srv6_sid
-                }},
-                edge: {{
-                    _key: e._key,
-                    latency: e.unidir_link_delay,
-                    percent_util: e.percent_util_out,
-                    load: e.load,
-                    country_codes: e.country_codes
-                }},
-                metrics: {{
-                    hop_count: LENGTH(p.vertices) - 1
-                }}
-            }}
-        """
-        
-        cursor = db.aql.execute(aql)
-        results = [doc for doc in cursor]
-        
-        return {
-            "source": source,
-            "direction": direction,
-            "depth": depth,
-            "neighbor_count": len(results),
-            "neighbors": results
-        }
-        
-    except Exception as e:
-        print(f"Error getting neighbors: {str(e)}")
-        raise HTTPException(
-            status_code=500,
-            detail=str(e)
-        )
-
-@router.get("/collections/{collection_name}/vertices/keys")
-async def get_vertex_keys(collection_name: str):
-    """
-    Get just the keys of vertices referenced in a graph collection
-    """
-    try:
-        db = get_db()
-        if not db.has_collection(collection_name):
-            raise HTTPException(
-                status_code=404,
-                detail=f"Collection {collection_name} not found"
-            )
-        
-        collection = db.collection(collection_name)
-        
-        # Debug print
-        print(f"Getting vertex keys for collection: {collection_name}")
-        
-        try:
-            # Get all edges to find vertex collections
-            vertex_keys = set()
-            
-            # First pass: collect all unique vertex keys from edges
-            aql = f"""
-            FOR edge IN {collection_name}
-                COLLECT AGGREGATE 
-                    from_keys = UNIQUE(PARSE_IDENTIFIER(edge._from).key),
-                    to_keys = UNIQUE(PARSE_IDENTIFIER(edge._to).key)
-                RETURN {{
-                    keys: UNION_DISTINCT(from_keys, to_keys)
-                }}
-            """
-            
-            cursor = db.aql.execute(aql)
-            results = [doc for doc in cursor]
-            
-            if results and results[0]['keys']:
-                return {
-                    'collection': collection_name,
-                    'vertex_count': len(results[0]['keys']),
-                    'vertex_keys': sorted(results[0]['keys'])
-                }
-            else:
-                return {
-                    'collection': collection_name,
-                    'vertex_count': 0,
-                    'vertex_keys': []
-                }
-            
-        except Exception as e:
-            print(f"Error processing vertex keys: {str(e)}")
-            raise HTTPException(
-                status_code=500,
-                detail=f"Error processing vertex keys: {str(e)}"
-            )
-            
-    except Exception as e:
-        print(f"Error in get_vertex_keys: {str(e)}")
-        raise HTTPException(
-            status_code=500,
-            detail=str(e)
-        ) 
-
-@router.get("/collections/{collection_name}/vertices/ids")
-async def get_vertex_ids(collection_name: str):
-    """
-    Get both _key and _id for vertices referenced in a graph collection
-    """
-    try:
-        db = get_db()
-        if not db.has_collection(collection_name):
-            raise HTTPException(
-                status_code=404,
-                detail=f"Collection {collection_name} not found"
-            )
-        
-        # Debug print
-        print(f"Getting vertex IDs for collection: {collection_name}")
-        
-        try:
-            aql = f"""
-            FOR edge IN {collection_name}
-                COLLECT AGGREGATE 
-                    from_vertices = UNIQUE({{_id: edge._from, _key: PARSE_IDENTIFIER(edge._from).key}}),
-                    to_vertices = UNIQUE({{_id: edge._to, _key: PARSE_IDENTIFIER(edge._to).key}})
-                RETURN {{
-                    vertices: UNION_DISTINCT(from_vertices, to_vertices)
-                }}
-            """
-            
-            cursor = db.aql.execute(aql)
-            results = [doc for doc in cursor]
-            
-            if results and results[0]['vertices']:
-                # Sort by _key for consistency
-                sorted_vertices = sorted(results[0]['vertices'], key=lambda x: x['_key'])
-                return {
-                    'collection': collection_name,
-                    'vertex_count': len(sorted_vertices),
-                    'vertices': sorted_vertices
-                }
-            else:
-                return {
-                    'collection': collection_name,
-                    'vertex_count': 0,
-                    'vertices': []
-                }
-            
-        except Exception as e:
-            print(f"Error processing vertex IDs: {str(e)}")
-            raise HTTPException(
-                status_code=500,
-                detail=f"Error processing vertex IDs: {str(e)}"
-            )
-            
-    except Exception as e:
-        print(f"Error in get_vertex_ids: {str(e)}")
-        raise HTTPException(
-            status_code=500,
-            detail=str(e)
-        ) 
-
 @router.get("/collections/{collection_name}/traverse/simple")
 async def traverse_graph_simple(
     collection_name: str,
@@ -753,259 +960,72 @@ async def traverse_graph_simple(
             detail=str(e)
         ) 
 
-@router.get("/collections/{collection_name}/vertices/summary")
-async def get_vertex_summary(
-    collection_name: str, 
-    limit: int = 100,
-    vertex_collection: str = None  # New optional query parameter
+@router.get("/collections/{collection_name}/neighbors")
+async def get_neighbors(
+    collection_name: str,
+    source: str,
+    direction: str = "outbound",  # or "inbound", "any"
+    depth: int = 1
 ):
     """
-    Get summarized vertex data from any graph in the database.
-    Returns only key fields that have data.
-    Optionally filter by specific vertex collection.
+    Get immediate neighbors of a node
     """
     try:
         db = get_db()
-        
-        # First, get the vertex collections for this graph
-        collections_query = """
-        FOR e IN @@graph
-            COLLECT AGGREGATE 
-                from_cols = UNIQUE(PARSE_IDENTIFIER(e._from).collection),
-                to_cols = UNIQUE(PARSE_IDENTIFIER(e._to).collection)
-            RETURN {
-                vertex_collections: UNION_DISTINCT(from_cols, to_cols)
-            }
-        """
-        
-        collections_cursor = db.aql.execute(
-            collections_query,
-            bind_vars={
-                '@graph': collection_name
-            }
-        )
-        
-        collections_result = [doc for doc in collections_cursor]
-        if not collections_result:
+        if not db.has_collection(collection_name):
             raise HTTPException(
                 status_code=404,
-                detail=f"No vertex collections found for graph {collection_name}"
+                detail=f"Collection {collection_name} not found"
             )
-            
-        vertex_collections = collections_result[0]['vertex_collections']
         
-        # If vertex_collection is specified, validate it exists in the graph
-        if vertex_collection and vertex_collection not in vertex_collections:
+        # Validate direction parameter
+        if direction.lower() not in ["outbound", "inbound", "any"]:
             raise HTTPException(
                 status_code=400,
-                detail=f"Vertex collection '{vertex_collection}' not found in graph. Available collections: {vertex_collections}"
+                detail="Direction must be 'outbound', 'inbound', or 'any'"
             )
         
-        # Filter collections if vertex_collection is specified
-        collections_to_query = [vertex_collection] if vertex_collection else vertex_collections
-        
-        # Now query each vertex collection
-        all_vertices = []
-        for vcoll in collections_to_query:
-            vertex_query = """
-            FOR v IN @@collection
-                LIMIT @limit
-                RETURN {
-                    collection: @collection_name,
-                    _key: v._key,
+        # AQL query for neighbors
+        aql = f"""
+        FOR v, e, p IN 1..{depth} {direction.upper()}
+            '{source}'
+            {collection_name}
+            OPTIONS {{uniqueVertices: "path"}}
+            RETURN DISTINCT {{
+                neighbor: {{
                     _id: v._id,
-                    name: HAS(v, 'name') ? v.name : null,
-                    prefix: HAS(v, 'prefix') ? v.prefix : null,
-                    sids: HAS(v, 'sids') ? v.sids[*].srv6_sid : null,
-                    protocol: HAS(v, 'protocol') ? v.protocol : null,
-                    asn: HAS(v, 'asn') ? v.asn : null
-                }
-            """
-            
-            vertex_cursor = db.aql.execute(
-                vertex_query,
-                bind_vars={
-                    '@collection': vcoll,
-                    'collection_name': vcoll,
-                    'limit': limit
-                }
-            )
-            
-            vertices = [doc for doc in vertex_cursor]
-            all_vertices.extend(vertices)
+                    _key: v._key,
+                    router_id: v.router_id,
+                    prefix: v.prefix,
+                    name: v.name,
+                    sids: v.sids[0].srv6_sid
+                }},
+                edge: {{
+                    _key: e._key,
+                    latency: e.unidir_link_delay,
+                    percent_util: e.percent_util_out,
+                    load: e.load,
+                    country_codes: e.country_codes
+                }},
+                metrics: {{
+                    hop_count: LENGTH(p.vertices) - 1
+                }}
+            }}
+        """
         
-        # Remove null fields from the response
-        cleaned_vertices = []
-        for vertex in all_vertices:
-            cleaned_vertex = {k: v for k, v in vertex.items() if v is not None}
-            cleaned_vertices.append(cleaned_vertex)
+        cursor = db.aql.execute(aql)
+        results = [doc for doc in cursor]
         
         return {
-            'graph': collection_name,
-            'vertex_collections': vertex_collections,
-            'filtered_collection': vertex_collection,
-            'total_vertices': len(cleaned_vertices),
-            'vertices': cleaned_vertices
+            "source": source,
+            "direction": direction,
+            "depth": depth,
+            "neighbor_count": len(results),
+            "neighbors": results
         }
         
     except Exception as e:
-        print(f"Error getting vertex summary: {str(e)}")
-        raise HTTPException(
-            status_code=500,
-            detail=str(e)
-        )
-
-@router.get("/collections/{collection_name}/edges/detail")
-async def get_detailed_edge_connections(collection_name: str, limit: Optional[int] = None):
-    """
-    Get detailed edge information from a graph collection including metrics and properties
-    """
-    try:
-        db = get_db()
-        if not db.has_collection(collection_name):
-            raise HTTPException(
-                status_code=404,
-                detail=f"Collection {collection_name} not found"
-            )
-        
-        collection = db.collection(collection_name)
-        
-        # Get edges with additional fields
-        try:
-            edges = []
-            cursor = collection.all()
-            for edge in cursor:
-                if '_from' in edge and '_to' in edge:
-                    edge_detail = {
-                        '_key': edge.get('_key'),
-                        '_from': edge['_from'],
-                        '_to': edge['_to'],
-                        'name': edge.get('name'),
-                        'prefix': edge.get('prefix'),
-                        'protocol': edge.get('protocol'),
-                        'sids': edge.get('sids', []),
-                        'country_codes': edge.get('country_codes'),
-                        'metrics': {
-                            'unidir_delay': edge.get('unidir_link_delay'),
-                            'percent_util_out': edge.get('percent_util_out'),
-                            'percent_util_in': edge.get('percent_util_in'),
-                            'bandwidth': edge.get('max_link_bandwidth'),
-                            'reservable_bandwidth': edge.get('max_reservable_link_bandwidth'),
-                            'load': edge.get('load')
-                        },
-                        'timestamps': {
-                            'first_seen': edge.get('first_seen_at'),
-                            'last_seen': edge.get('last_seen_at'),
-                            'updated': edge.get('updated_at')
-                        }
-                    }
-                    
-                    # Remove any metrics that are None
-                    edge_detail['metrics'] = {k: v for k, v in edge_detail['metrics'].items() if v is not None}
-                    edge_detail['timestamps'] = {k: v for k, v in edge_detail['timestamps'].items() if v is not None}
-                    
-                    # Only include non-None fields
-                    edges.append({k: v for k, v in edge_detail.items() if v is not None})
-                else:
-                    print(f"Warning: Edge missing _from or _to: {edge}")
-            
-            # Apply limit if specified
-            result_edges = edges[:limit] if limit else edges
-            
-            return {
-                'collection': collection_name,
-                'edge_count': len(edges),
-                'returned_edges': len(result_edges),
-                'edges': result_edges
-            }
-            
-        except Exception as e:
-            print(f"Error processing edges: {str(e)}")
-            raise HTTPException(
-                status_code=500,
-                detail=f"Error processing edges: {str(e)}"
-            )
-            
-    except Exception as e:
-        print(f"Error in get_detailed_edge_connections: {str(e)}")
-        raise HTTPException(
-            status_code=500,
-            detail=str(e)
-        )
-
-@router.get("/collections/{collection_name}/topology")
-async def get_topology(collection_name: str, limit: Optional[int] = None):
-    """
-    Get combined edge and vertex information from a graph collection
-    """
-    try:
-        db = get_db()
-        if not db.has_collection(collection_name):
-            raise HTTPException(
-                status_code=404,
-                detail=f"Collection {collection_name} not found"
-            )
-        
-        # Get edges first
-        collection = db.collection(collection_name)
-        edges = []
-        vertex_ids = set()  # Track all vertex IDs we need to look up
-        
-        # Get all edges and collect vertex IDs
-        cursor = collection.all()
-        for edge in cursor:
-            if '_from' in edge and '_to' in edge:
-                edges.append({
-                    '_from': edge['_from'],
-                    '_to': edge['_to']
-                })
-                vertex_ids.add(edge['_from'])
-                vertex_ids.add(edge['_to'])
-        
-        # Apply limit if specified
-        result_edges = edges[:limit] if limit else edges
-        
-        # Now get vertex details
-        vertices = {}
-        for vertex_id in vertex_ids:
-            # Parse collection name and key from vertex ID
-            collection_name, key = vertex_id.split('/')
-            
-            try:
-                vertex = db.collection(collection_name).get(key)
-                if vertex:
-                    # Build vertex details
-                    vertex_detail = {
-                        'collection': collection_name
-                    }
-                    
-                    # Add optional fields if they exist
-                    if 'name' in vertex:
-                        vertex_detail['name'] = vertex['name']
-                    if 'prefix' in vertex:
-                        vertex_detail['prefix'] = vertex['prefix']
-                    if 'protocol' in vertex:
-                        vertex_detail['protocol'] = vertex['protocol']
-                    if 'sids' in vertex:
-                        vertex_detail['sids'] = [sid.get('srv6_sid') for sid in vertex['sids'] if 'srv6_sid' in sid]
-                    if 'asn' in vertex:
-                        vertex_detail['asn'] = vertex['asn']
-                    
-                    vertices[vertex_id] = vertex_detail
-            except Exception as vertex_error:
-                print(f"Error getting vertex {vertex_id}: {str(vertex_error)}")
-                continue
-        
-        return {
-            'edges': result_edges,
-            'vertices': vertices,
-            'total_edges': len(edges),
-            'returned_edges': len(result_edges),
-            'total_vertices': len(vertices)
-        }
-            
-    except Exception as e:
-        print(f"Error in get_topology: {str(e)}")
+        print(f"Error getting neighbors: {str(e)}")
         raise HTTPException(
             status_code=500,
             detail=str(e)
