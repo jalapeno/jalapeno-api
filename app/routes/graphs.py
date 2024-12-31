@@ -20,16 +20,15 @@ KNOWN_COLLECTIONS = {
     'graphs': [
         'ipv4_graph',
         'ipv6_graph',
-        'lsv4_graph',
-        'lsv6_graph'
+        'igpv4_graph',
+        'igpv6_graph'
     ],
     'prefixes': [
         'ebgp_prefix_v4',
         'ebgp_prefix_v6'
     ],
     'peers': [
-        'ebgp_peer_v4',
-        'ebgp_peer_v6'
+        'bgp_node'
     ]
 }
 

@@ -5,26 +5,26 @@ curl http://localhost:8000/api/v1/collections
 
 ## Graphs
 #### Get specific graph data
-curl http://localhost:8000/api/v1/collections/lsv4_graph
-curl http://localhost:8000/api/v1/collections/lsv6_graph
+curl http://localhost:8000/api/v1/collections/igpv4_graph
+curl http://localhost:8000/api/v1/collections/igpv6_graph
 curl http://localhost:8000/api/v1/collections/ipv4_graph
 curl http://localhost:8000/api/v1/collections/ipv6_graph
 
 #### Get graph info
-curl http://localhost:8000/api/v1/collections/lsv4_graph/info
-curl http://localhost:8000/api/v1/collections/lsv6_graph/info
+curl http://localhost:8000/api/v1/collections/igpv4_graph/info
+curl http://localhost:8000/api/v1/collections/igpv6_graph/info
 
 #### Get just the edge connections for a graph
 curl http://localhost:8000/api/v1/collections/ipv6_graph/edges
 curl http://localhost:8000/api/v1/collections/ipv4_graph/edges
-curl http://localhost:8000/api/v1/collections/lsv6_graph/edges
-curl http://localhost:8000/api/v1/collections/lsv4_graph/edges
+curl http://localhost:8000/api/v1/collections/igpv6_graph/edges
+curl http://localhost:8000/api/v1/collections/igpv4_graph/edges
 
 #### Get just the vertices for a graph
 curl http://localhost:8000/api/v1/collections/ipv6_graph/vertices
 curl http://localhost:8000/api/v1/collections/ipv4_graph/vertices
-curl http://localhost:8000/api/v1/collections/lsv6_graph/vertices
-curl http://localhost:8000/api/v1/collections/lsv4_graph/vertices
+curl http://localhost:8000/api/v1/collections/igpv6_graph/vertices
+curl http://localhost:8000/api/v1/collections/igpv4_graph/vertices
 
 #### Get vertex keys
 curl http://localhost:8000/api/v1/collections/ipv6_graph/vertices/keys
@@ -137,8 +137,8 @@ curl http://localhost:8000/api/v1/collections/ipv6_graph/vertices/summary?limit=
 
 #### Works with any graph
 curl http://localhost:8000/api/v1/collections/ipv4_graph/vertices/summary
-curl http://localhost:8000/api/v1/collections/lsv4_graph/vertices/summary
-curl http://localhost:8000/api/v1/collections/lsv6_graph/vertices/summary
+curl http://localhost:8000/api/v1/collections/igpv4_graph/vertices/summary
+curl http://localhost:8000/api/v1/collections/igpv6_graph/vertices/summary
 
 curl http://localhost:8000/api/v1/collections/ipv6_graph/vertices/summary
 curl http://localhost:8000/api/v1/collections/ipv6_graph/vertices/summary?vertex_collection=ls_node_extended
