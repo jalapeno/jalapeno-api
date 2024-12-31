@@ -160,3 +160,10 @@ curl http://localhost:8000/api/v1/collections?filter_graphs=false
   607  curl http://localhost:8000/api/v1/collections/ipv6_graph/topology
   608  curl http://localhost:8000/api/v1/collections/ipv6_graph/topology | jq . | more
   609  curl http://localhost:8000/api/v1/collections/ipv6_graph/topology?limit=50
+
+
+# Get all node-to-node connections
+curl http://localhost:8000/api/v1/collections/ipv6_graph/topology/nodes
+
+# Get limited node-to-node connections
+curl http://localhost:8000/api/v1/collections/ipv6_graph/topology/nodes?limit=50

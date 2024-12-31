@@ -691,6 +691,91 @@ async def get_topology(collection_name: str, limit: Optional[int] = None):
             detail=str(e)
         )
 
+@router.get("/collections/{collection_name}/topology/nodes")
+async def get_node_topology(collection_name: str, limit: Optional[int] = None):
+    """
+    Get topology information filtered to only node-to-node connections
+    """
+    try:
+        db = get_db()
+        if not db.has_collection(collection_name):
+            raise HTTPException(
+                status_code=404,
+                detail=f"Collection {collection_name} not found"
+            )
+        
+        # Get edges filtered for node connections
+        edge_query = """
+        FOR edge IN @@collection
+            FILTER CONTAINS(edge._from, 'node') AND CONTAINS(edge._to, 'node')
+            RETURN {
+                _from: edge._from,
+                _to: edge._to
+            }
+        """
+        
+        edge_cursor = db.aql.execute(
+            edge_query,
+            bind_vars={
+                '@collection': collection_name
+            }
+        )
+        
+        edges = [doc for doc in edge_cursor]
+        
+        # Apply limit if specified
+        result_edges = edges[:limit] if limit else edges
+        
+        # Collect unique vertex IDs
+        vertex_ids = set()
+        for edge in result_edges:
+            vertex_ids.add(edge['_from'])
+            vertex_ids.add(edge['_to'])
+        
+        # Get vertex details
+        vertices = {}
+        for vertex_id in vertex_ids:
+            collection_name, key = vertex_id.split('/')
+            
+            try:
+                vertex = db.collection(collection_name).get(key)
+                if vertex:
+                    vertex_detail = {
+                        'collection': collection_name
+                    }
+                    
+                    # Add optional fields if they exist
+                    if 'name' in vertex:
+                        vertex_detail['name'] = vertex['name']
+                    if 'prefix' in vertex:
+                        vertex_detail['prefix'] = vertex['prefix']
+                    if 'protocol' in vertex:
+                        vertex_detail['protocol'] = vertex['protocol']
+                    if 'sids' in vertex:
+                        vertex_detail['sids'] = [sid.get('srv6_sid') for sid in vertex['sids'] if 'srv6_sid' in sid]
+                    if 'asn' in vertex:
+                        vertex_detail['asn'] = vertex['asn']
+                    
+                    vertices[vertex_id] = vertex_detail
+            except Exception as vertex_error:
+                print(f"Error getting vertex {vertex_id}: {str(vertex_error)}")
+                continue
+        
+        return {
+            'edges': result_edges,
+            'vertices': vertices,
+            'total_edges': len(edges),
+            'returned_edges': len(result_edges),
+            'total_vertices': len(vertices)
+        }
+            
+    except Exception as e:
+        print(f"Error in get_node_topology: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=str(e)
+        )
+
 ##############################
 # Shortest Path and Traversals
 ##############################
