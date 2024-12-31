@@ -855,6 +855,162 @@ async def get_vertex_summary(
             detail=str(e)
         )
 
+@router.get("/collections/{collection_name}/edges/detail")
+async def get_detailed_edge_connections(collection_name: str, limit: Optional[int] = None):
+    """
+    Get detailed edge information from a graph collection including metrics and properties
+    """
+    try:
+        db = get_db()
+        if not db.has_collection(collection_name):
+            raise HTTPException(
+                status_code=404,
+                detail=f"Collection {collection_name} not found"
+            )
+        
+        collection = db.collection(collection_name)
+        
+        # Get edges with additional fields
+        try:
+            edges = []
+            cursor = collection.all()
+            for edge in cursor:
+                if '_from' in edge and '_to' in edge:
+                    edge_detail = {
+                        '_key': edge.get('_key'),
+                        '_from': edge['_from'],
+                        '_to': edge['_to'],
+                        'name': edge.get('name'),
+                        'prefix': edge.get('prefix'),
+                        'protocol': edge.get('protocol'),
+                        'sids': edge.get('sids', []),
+                        'country_codes': edge.get('country_codes'),
+                        'metrics': {
+                            'unidir_delay': edge.get('unidir_link_delay'),
+                            'percent_util_out': edge.get('percent_util_out'),
+                            'percent_util_in': edge.get('percent_util_in'),
+                            'bandwidth': edge.get('max_link_bandwidth'),
+                            'reservable_bandwidth': edge.get('max_reservable_link_bandwidth'),
+                            'load': edge.get('load')
+                        },
+                        'timestamps': {
+                            'first_seen': edge.get('first_seen_at'),
+                            'last_seen': edge.get('last_seen_at'),
+                            'updated': edge.get('updated_at')
+                        }
+                    }
+                    
+                    # Remove any metrics that are None
+                    edge_detail['metrics'] = {k: v for k, v in edge_detail['metrics'].items() if v is not None}
+                    edge_detail['timestamps'] = {k: v for k, v in edge_detail['timestamps'].items() if v is not None}
+                    
+                    # Only include non-None fields
+                    edges.append({k: v for k, v in edge_detail.items() if v is not None})
+                else:
+                    print(f"Warning: Edge missing _from or _to: {edge}")
+            
+            # Apply limit if specified
+            result_edges = edges[:limit] if limit else edges
+            
+            return {
+                'collection': collection_name,
+                'edge_count': len(edges),
+                'returned_edges': len(result_edges),
+                'edges': result_edges
+            }
+            
+        except Exception as e:
+            print(f"Error processing edges: {str(e)}")
+            raise HTTPException(
+                status_code=500,
+                detail=f"Error processing edges: {str(e)}"
+            )
+            
+    except Exception as e:
+        print(f"Error in get_detailed_edge_connections: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=str(e)
+        )
+
+@router.get("/collections/{collection_name}/topology")
+async def get_topology(collection_name: str, limit: Optional[int] = None):
+    """
+    Get combined edge and vertex information from a graph collection
+    """
+    try:
+        db = get_db()
+        if not db.has_collection(collection_name):
+            raise HTTPException(
+                status_code=404,
+                detail=f"Collection {collection_name} not found"
+            )
+        
+        # Get edges first
+        collection = db.collection(collection_name)
+        edges = []
+        vertex_ids = set()  # Track all vertex IDs we need to look up
+        
+        # Get all edges and collect vertex IDs
+        cursor = collection.all()
+        for edge in cursor:
+            if '_from' in edge and '_to' in edge:
+                edges.append({
+                    '_from': edge['_from'],
+                    '_to': edge['_to']
+                })
+                vertex_ids.add(edge['_from'])
+                vertex_ids.add(edge['_to'])
+        
+        # Apply limit if specified
+        result_edges = edges[:limit] if limit else edges
+        
+        # Now get vertex details
+        vertices = {}
+        for vertex_id in vertex_ids:
+            # Parse collection name and key from vertex ID
+            collection_name, key = vertex_id.split('/')
+            
+            try:
+                vertex = db.collection(collection_name).get(key)
+                if vertex:
+                    # Build vertex details
+                    vertex_detail = {
+                        'collection': collection_name
+                    }
+                    
+                    # Add optional fields if they exist
+                    if 'name' in vertex:
+                        vertex_detail['name'] = vertex['name']
+                    if 'prefix' in vertex:
+                        vertex_detail['prefix'] = vertex['prefix']
+                    if 'protocol' in vertex:
+                        vertex_detail['protocol'] = vertex['protocol']
+                    if 'sids' in vertex:
+                        vertex_detail['sids'] = [sid.get('srv6_sid') for sid in vertex['sids'] if 'srv6_sid' in sid]
+                    if 'asn' in vertex:
+                        vertex_detail['asn'] = vertex['asn']
+                    
+                    vertices[vertex_id] = vertex_detail
+            except Exception as vertex_error:
+                print(f"Error getting vertex {vertex_id}: {str(vertex_error)}")
+                continue
+        
+        return {
+            'edges': result_edges,
+            'vertices': vertices,
+            'total_edges': len(edges),
+            'returned_edges': len(result_edges),
+            'total_vertices': len(vertices)
+        }
+            
+    except Exception as e:
+        print(f"Error in get_topology: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=str(e)
+        )
+
 # Add this at the bottom of the file
 print("\nRegistered routes in graphs.py:")
 for route in router.routes:

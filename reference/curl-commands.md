@@ -153,3 +153,10 @@ curl http://localhost:8000/api/v1/collections?filter_graphs=true
 
 # Get only non-graph collections
 curl http://localhost:8000/api/v1/collections?filter_graphs=false
+
+
+  605  curl http://localhost:8000/api/v1/collections/ipv6_graph/edges | jq .
+  606  curl http://198.18.133.104:30800/api/v1/collections/ipv6_graph/vertices/summary | jq .
+  607  curl http://localhost:8000/api/v1/collections/ipv6_graph/topology
+  608  curl http://localhost:8000/api/v1/collections/ipv6_graph/topology | jq . | more
+  609  curl http://localhost:8000/api/v1/collections/ipv6_graph/topology?limit=50
