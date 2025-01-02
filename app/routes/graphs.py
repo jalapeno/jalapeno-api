@@ -614,9 +614,12 @@ async def get_detailed_edge_connections(collection_name: str, limit: Optional[in
 ################
 
 @router.get("/collections/{collection_name}/topology")
-async def get_topology(collection_name: str, limit: Optional[int] = None):
+async def get_topology(
+    collection_name: str, 
+    include_all_fields: bool = True  # New optional parameter
+):
     """
-    Get combined edge and vertex information from a graph collection
+    Get complete topology information with optional field filtering
     """
     try:
         db = get_db()
@@ -626,66 +629,60 @@ async def get_topology(collection_name: str, limit: Optional[int] = None):
                 detail=f"Collection {collection_name} not found"
             )
         
-        # Get edges first
+        # Get all edges
         collection = db.collection(collection_name)
         edges = []
-        vertex_ids = set()  # Track all vertex IDs we need to look up
+        vertex_ids = set()
         
-        # Get all edges and collect vertex IDs
+        # Get all edges with full data
         cursor = collection.all()
         for edge in cursor:
             if '_from' in edge and '_to' in edge:
-                edges.append({
-                    '_from': edge['_from'],
-                    '_to': edge['_to']
-                })
+                # Include all fields if requested
+                if include_all_fields:
+                    edges.append(edge)
+                else:
+                    # Include only basic fields
+                    edges.append({
+                        '_from': edge['_from'],
+                        '_to': edge['_to']
+                    })
                 vertex_ids.add(edge['_from'])
                 vertex_ids.add(edge['_to'])
         
-        # Apply limit if specified
-        result_edges = edges[:limit] if limit else edges
-        
-        # Now get vertex details
+        # Get vertex details
         vertices = {}
         for vertex_id in vertex_ids:
-            # Parse collection name and key from vertex ID
             collection_name, key = vertex_id.split('/')
             
             try:
                 vertex = db.collection(collection_name).get(key)
                 if vertex:
-                    # Build vertex details
-                    vertex_detail = {
-                        'collection': collection_name
-                    }
-                    
-                    # Add optional fields if they exist
-                    if 'name' in vertex:
-                        vertex_detail['name'] = vertex['name']
-                    if 'router_id' in vertex:
-                        vertex_detail['router_id'] = vertex['router_id']
-                    if 'tier' in vertex:
-                        vertex_detail['tier'] = vertex['tier']
-                    if 'prefix' in vertex:
-                        vertex_detail['prefix'] = vertex['prefix']
-                    if 'protocol' in vertex:
-                        vertex_detail['protocol'] = vertex['protocol']
-                    if 'sids' in vertex:
-                        vertex_detail['sids'] = [sid.get('srv6_sid') for sid in vertex['sids'] if 'srv6_sid' in sid]
-                    if 'asn' in vertex:
-                        vertex_detail['asn'] = vertex['asn']
-                    
-                    vertices[vertex_id] = vertex_detail
+                    if include_all_fields:
+                        # Include all vertex fields
+                        vertices[vertex_id] = vertex
+                    else:
+                        # Include only commonly used fields
+                        vertex_detail = {
+                            'collection': collection_name,
+                            'name': vertex.get('name'),
+                            'prefix': vertex.get('prefix'),
+                            'protocol': vertex.get('protocol'),
+                            'sids': [sid.get('srv6_sid') for sid in vertex.get('sids', []) if 'srv6_sid' in sid],
+                            'asn': vertex.get('asn')
+                        }
+                        # Remove None values
+                        vertices[vertex_id] = {k: v for k, v in vertex_detail.items() if v is not None}
             except Exception as vertex_error:
                 print(f"Error getting vertex {vertex_id}: {str(vertex_error)}")
                 continue
         
         return {
-            'edges': result_edges,
+            'edges': edges,
             'vertices': vertices,
             'total_edges': len(edges),
-            'returned_edges': len(result_edges),
-            'total_vertices': len(vertices)
+            'total_vertices': len(vertices),
+            'include_all_fields': include_all_fields
         }
             
     except Exception as e:
@@ -696,7 +693,10 @@ async def get_topology(collection_name: str, limit: Optional[int] = None):
         )
 
 @router.get("/collections/{collection_name}/topology/nodes")
-async def get_node_topology(collection_name: str, limit: Optional[int] = None):
+async def get_node_topology(
+    collection_name: str, 
+    include_all_fields: bool = True  # Default to returning all fields
+):
     """
     Get topology information filtered to only node-to-node connections
     """
@@ -712,10 +712,7 @@ async def get_node_topology(collection_name: str, limit: Optional[int] = None):
         edge_query = """
         FOR edge IN @@collection
             FILTER CONTAINS(edge._from, 'node') AND CONTAINS(edge._to, 'node')
-            RETURN {
-                _from: edge._from,
-                _to: edge._to
-            }
+            RETURN edge
         """
         
         edge_cursor = db.aql.execute(
@@ -725,16 +722,21 @@ async def get_node_topology(collection_name: str, limit: Optional[int] = None):
             }
         )
         
-        edges = [doc for doc in edge_cursor]
-        
-        # Apply limit if specified
-        result_edges = edges[:limit] if limit else edges
-        
-        # Collect unique vertex IDs
+        # Process edges based on include_all_fields
+        edges = []
         vertex_ids = set()
-        for edge in result_edges:
-            vertex_ids.add(edge['_from'])
-            vertex_ids.add(edge['_to'])
+        
+        for edge in edge_cursor:
+            if '_from' in edge and '_to' in edge:
+                if include_all_fields:
+                    edges.append(edge)
+                else:
+                    edges.append({
+                        '_from': edge['_from'],
+                        '_to': edge['_to']
+                    })
+                vertex_ids.add(edge['_from'])
+                vertex_ids.add(edge['_to'])
         
         # Get vertex details
         vertices = {}
@@ -744,33 +746,31 @@ async def get_node_topology(collection_name: str, limit: Optional[int] = None):
             try:
                 vertex = db.collection(collection_name).get(key)
                 if vertex:
-                    vertex_detail = {
-                        'collection': collection_name
-                    }
-                    
-                    # Add optional fields if they exist
-                    if 'name' in vertex:
-                        vertex_detail['name'] = vertex['name']
-                    if 'prefix' in vertex:
-                        vertex_detail['prefix'] = vertex['prefix']
-                    if 'protocol' in vertex:
-                        vertex_detail['protocol'] = vertex['protocol']
-                    if 'sids' in vertex:
-                        vertex_detail['sids'] = [sid.get('srv6_sid') for sid in vertex['sids'] if 'srv6_sid' in sid]
-                    if 'asn' in vertex:
-                        vertex_detail['asn'] = vertex['asn']
-                    
-                    vertices[vertex_id] = vertex_detail
+                    if include_all_fields:
+                        # Include all vertex fields
+                        vertices[vertex_id] = vertex
+                    else:
+                        # Include only commonly used fields
+                        vertex_detail = {
+                            'collection': collection_name,
+                            'name': vertex.get('name'),
+                            'prefix': vertex.get('prefix'),
+                            'protocol': vertex.get('protocol'),
+                            'sids': [sid.get('srv6_sid') for sid in vertex.get('sids', []) if 'srv6_sid' in sid],
+                            'asn': vertex.get('asn')
+                        }
+                        # Remove None values
+                        vertices[vertex_id] = {k: v for k, v in vertex_detail.items() if v is not None}
             except Exception as vertex_error:
                 print(f"Error getting vertex {vertex_id}: {str(vertex_error)}")
                 continue
         
         return {
-            'edges': result_edges,
+            'edges': edges,
             'vertices': vertices,
             'total_edges': len(edges),
-            'returned_edges': len(result_edges),
-            'total_vertices': len(vertices)
+            'total_vertices': len(vertices),
+            'include_all_fields': include_all_fields
         }
             
     except Exception as e:
