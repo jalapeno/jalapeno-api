@@ -662,6 +662,10 @@ async def get_topology(collection_name: str, limit: Optional[int] = None):
                     # Add optional fields if they exist
                     if 'name' in vertex:
                         vertex_detail['name'] = vertex['name']
+                    if 'router_id' in vertex:
+                        vertex_detail['router_id'] = vertex['router_id']
+                    if 'tier' in vertex:
+                        vertex_detail['tier'] = vertex['tier']
                     if 'prefix' in vertex:
                         vertex_detail['prefix'] = vertex['prefix']
                     if 'protocol' in vertex:
