@@ -42,6 +42,13 @@ uvicorn app.main:app --reload
 2. Access the application
 - API Documentation: http://localhost:8000/docs
 
+3. Local Development
+
+```bash
+export LOCAL_DEV=1
+uvicorn app.main:app --reload
+```
+
 ### Production Deployment
 
 ```bash

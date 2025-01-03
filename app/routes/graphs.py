@@ -811,7 +811,7 @@ async def get_shortest_path(
         
         # AQL query for shortest path with detailed information
         aql = f"""
-        WITH ls_node_extended
+        WITH igp_node
         LET path = (
             FOR v, e IN {direction.upper()}
                 SHORTEST_PATH @source TO @destination

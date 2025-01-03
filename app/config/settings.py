@@ -11,10 +11,11 @@ class Settings(BaseSettings):
     password: str = "jalapeno"
 
     # Environment-based configuration
+    # export LOCAL_DEV=1
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         if os.getenv("LOCAL_DEV"):
-            self.database_server = "http://198.18.133.111:30852"
+            self.database_server = "http://198.18.133.104:30852"
             self.credentials_path = None
 
     class Config:
