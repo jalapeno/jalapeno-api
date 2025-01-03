@@ -818,6 +818,7 @@ async def get_shortest_path(
                 @graph_name
                 RETURN {{
                     vertex: {{
+                        _id: v._id,
                         _key: v._key,
                         router_id: v.router_id,
                         prefix: v.prefix,
@@ -825,6 +826,7 @@ async def get_shortest_path(
                         sids: v.sids
                     }},
                     edge: e ? {{
+                        _id: e._id,
                         _key: e._key,
                         latency: e.unidir_link_delay,
                         percent_util: e.percent_util_out,
