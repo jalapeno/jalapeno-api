@@ -167,3 +167,8 @@ curl http://localhost:8000/api/v1/collections/ipv6_graph/topology/nodes
 
 # Get limited node-to-node connections
 curl http://localhost:8000/api/v1/collections/ipv6_graph/topology/nodes?limit=50
+
+# latency weighted shortest path
+curl "http://localhost:8000/api/v1/collections/ipv6_graph/shortest_path/latency?source=gpus/host08-gpu02&destination=gpus/host12-gpu02"
+
+curl "http://localhost:8000/api/v1/collections/ipv6_graph/shortest_path/latency?source=gpus/host08-gpu02&destination=gpus/host12-gpu02&direction=outbound"

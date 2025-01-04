@@ -784,6 +784,7 @@ async def get_node_topology(
 # Shortest Path and Traversals
 ##############################
 
+# basic shortest path
 @router.get("/collections/{collection_name}/shortest_path")
 async def get_shortest_path(
     collection_name: str,
@@ -828,8 +829,10 @@ async def get_shortest_path(
                     edge: e ? {{
                         _id: e._id,
                         _key: e._key,
-                        latency: e.unidir_link_delay,
-                        percent_util: e.percent_util_out,
+                        _from: e._from,
+                        _to: e._to,
+                        latency: e.latency,
+                        percent_util_out: e.percent_util_out,
                         load: e.load
                     }} : null
                 }}
@@ -872,6 +875,338 @@ async def get_shortest_path(
         
     except Exception as e:
         print(f"Error finding shortest path: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=str(e)
+        )
+
+# latency weighted shortest path
+@router.get("/collections/{collection_name}/shortest_path/latency")
+async def get_shortest_path_latency(
+    collection_name: str,
+    source: str,
+    destination: str,
+    direction: str = "outbound"  # or "inbound", "any"
+):
+    """
+    Find shortest path between two nodes in a graph using latency as weight
+    """
+    try:
+        db = get_db()
+        if not db.has_collection(collection_name):
+            raise HTTPException(
+                status_code=404,
+                detail=f"Collection {collection_name} not found"
+            )
+        
+        # Validate direction parameter
+        if direction.lower() not in ["outbound", "inbound", "any"]:
+            raise HTTPException(
+                status_code=400,
+                detail="Direction must be 'outbound', 'inbound', or 'any'"
+            )
+        
+        # AQL query for shortest path with latency weight and detailed information
+        aql = f"""
+        WITH igp_node
+        LET path = (
+            FOR v, e IN {direction.upper()}
+                SHORTEST_PATH @source TO @destination
+                @graph_name
+                OPTIONS {{
+                    weightAttribute: 'latency',
+                    defaultWeight: 1
+                }}
+                RETURN {{
+                    vertex: {{
+                        _id: v._id,
+                        _key: v._key,
+                        router_id: v.router_id,
+                        prefix: v.prefix,
+                        name: v.name,
+                        sids: v.sids
+                    }},
+                    edge: e ? {{
+                        _id: e._id,
+                        _key: e._key,
+                        _from: e._from,
+                        _to: e._to,
+                        latency: e.latency,
+                        percent_util_out: e.percent_util_out,
+                        load: e.load
+                    }} : null
+                }}
+        )
+        
+        LET total_latency = (
+            FOR p IN path
+                FILTER p.edge != null
+                COLLECT AGGREGATE total = SUM(p.edge.latency)
+                RETURN total
+        )
+        
+        RETURN {{
+            path: path,
+            hopcount: LENGTH(path) - 1,
+            vertex_count: LENGTH(path),
+            source_info: FIRST(path).vertex,
+            destination_info: LAST(path).vertex,
+            total_latency: FIRST(total_latency)
+        }}
+        """
+        
+        cursor = db.aql.execute(
+            aql,
+            bind_vars={
+                'source': source,
+                'destination': destination,
+                'graph_name': collection_name
+            }
+        )
+        
+        results = [doc for doc in cursor]
+        
+        if not results or not results[0]['path']:
+            return {
+                "found": False,
+                "message": "No path found between specified nodes"
+            }
+        
+        return {
+            "found": True,
+            "path": results[0]['path'],
+            "hopcount": results[0]['hopcount'],
+            "vertex_count": results[0]['vertex_count'],
+            "source_info": results[0]['source_info'],
+            "destination_info": results[0]['destination_info'],
+            "direction": direction,
+            "total_latency": results[0]['total_latency']
+        }
+        
+    except Exception as e:
+        print(f"Error finding shortest path with latency weight: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=str(e)
+        )
+
+# weighted shortest path - outbound utilization
+@router.get("/collections/{collection_name}/shortest_path/utilization")
+async def get_shortest_path_utilization(
+    collection_name: str,
+    source: str,
+    destination: str,
+    direction: str = "outbound"  # or "inbound", "any"
+):
+    """
+    Find shortest path between two nodes in a graph using percent_util_out as weight
+    """
+    try:
+        db = get_db()
+        if not db.has_collection(collection_name):
+            raise HTTPException(
+                status_code=404,
+                detail=f"Collection {collection_name} not found"
+            )
+        
+        # Validate direction parameter
+        if direction.lower() not in ["outbound", "inbound", "any"]:
+            raise HTTPException(
+                status_code=400,
+                detail="Direction must be 'outbound', 'inbound', or 'any'"
+            )
+        
+        # AQL query for shortest path with utilization weight and detailed information
+        aql = f"""
+        WITH igp_node
+        LET path = (
+            FOR v, e IN {direction.upper()}
+                SHORTEST_PATH @source TO @destination
+                @graph_name
+                OPTIONS {{
+                    weightAttribute: 'percent_util_out',
+                    defaultWeight: 1
+                }}
+                RETURN {{
+                    vertex: {{
+                        _id: v._id,
+                        _key: v._key,
+                        router_id: v.router_id,
+                        prefix: v.prefix,
+                        name: v.name,
+                        sids: v.sids
+                    }},
+                    edge: e ? {{
+                        _id: e._id,
+                        _key: e._key,
+                        _from: e._from,
+                        _to: e._to,
+                        latency: e.latency,
+                        percent_util_out: e.percent_util_out,
+                        load: e.load
+                    }} : null
+                }}
+        )
+        
+        LET avg_utilization = (
+            FOR p IN path
+                FILTER p.edge != null
+                COLLECT AGGREGATE 
+                    avg = AVERAGE(p.edge.percent_util_out)
+                RETURN avg
+        )
+        
+        RETURN {{
+            path: path,
+            hopcount: LENGTH(path) - 1,
+            vertex_count: LENGTH(path),
+            source_info: FIRST(path).vertex,
+            destination_info: LAST(path).vertex,
+            average_utilization: FIRST(avg_utilization)
+        }}
+        """
+        
+        cursor = db.aql.execute(
+            aql,
+            bind_vars={
+                'source': source,
+                'destination': destination,
+                'graph_name': collection_name
+            }
+        )
+        
+        results = [doc for doc in cursor]
+        
+        if not results or not results[0]['path']:
+            return {
+                "found": False,
+                "message": "No path found between specified nodes"
+            }
+        
+        return {
+            "found": True,
+            "path": results[0]['path'],
+            "hopcount": results[0]['hopcount'],
+            "vertex_count": results[0]['vertex_count'],
+            "source_info": results[0]['source_info'],
+            "destination_info": results[0]['destination_info'],
+            "direction": direction,
+            "average_utilization": results[0]['average_utilization']
+        }
+        
+    except Exception as e:
+        print(f"Error finding shortest path with utilization weight: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=str(e)
+        )
+
+# weighted shortest path - load
+@router.get("/collections/{collection_name}/shortest_path/load")
+async def get_shortest_path_load(
+    collection_name: str,
+    source: str,
+    destination: str,
+    direction: str = "outbound"  # or "inbound", "any"
+):
+    """
+    Find shortest path between two nodes in a graph using load as weight
+    """
+    try:
+        db = get_db()
+        if not db.has_collection(collection_name):
+            raise HTTPException(
+                status_code=404,
+                detail=f"Collection {collection_name} not found"
+            )
+        
+        # Validate direction parameter
+        if direction.lower() not in ["outbound", "inbound", "any"]:
+            raise HTTPException(
+                status_code=400,
+                detail="Direction must be 'outbound', 'inbound', or 'any'"
+            )
+        
+        # AQL query for shortest path with load weight and detailed information
+        aql = f"""
+        WITH igp_node
+        LET path = (
+            FOR v, e IN {direction.upper()}
+                SHORTEST_PATH @source TO @destination
+                @graph_name
+                OPTIONS {{
+                    weightAttribute: 'load',
+                    defaultWeight: 1
+                }}
+                RETURN {{
+                    vertex: {{
+                        _id: v._id,
+                        _key: v._key,
+                        router_id: v.router_id,
+                        prefix: v.prefix,
+                        name: v.name,
+                        sids: v.sids
+                    }},
+                    edge: e ? {{
+                        _id: e._id,
+                        _key: e._key,
+                        _from: e._from,
+                        _to: e._to,
+                        latency: e.latency,
+                        percent_util_out: e.percent_util_out,
+                        load: e.load
+                    }} : null
+                }}
+        )
+        
+        LET avg_load = (
+            FOR p IN path
+                FILTER p.edge != null
+                COLLECT AGGREGATE 
+                    avg = AVERAGE(p.edge.load)
+                RETURN avg
+        )
+        
+        RETURN {{
+            path: path,
+            hopcount: LENGTH(path) - 1,
+            vertex_count: LENGTH(path),
+            source_info: FIRST(path).vertex,
+            destination_info: LAST(path).vertex,
+            average_load: FIRST(avg_load)
+        }}
+        """
+        
+        cursor = db.aql.execute(
+            aql,
+            bind_vars={
+                'source': source,
+                'destination': destination,
+                'graph_name': collection_name
+            }
+        )
+        
+        results = [doc for doc in cursor]
+        
+        if not results or not results[0]['path']:
+            return {
+                "found": False,
+                "message": "No path found between specified nodes"
+            }
+        
+        return {
+            "found": True,
+            "path": results[0]['path'],
+            "hopcount": results[0]['hopcount'],
+            "vertex_count": results[0]['vertex_count'],
+            "source_info": results[0]['source_info'],
+            "destination_info": results[0]['destination_info'],
+            "direction": direction,
+            "average_load": results[0]['average_load']
+        }
+        
+    except Exception as e:
+        print(f"Error finding shortest path with load weight: {str(e)}")
         raise HTTPException(
             status_code=500,
             detail=str(e)
