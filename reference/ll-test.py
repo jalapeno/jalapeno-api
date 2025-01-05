@@ -48,7 +48,7 @@ pathdict = {
         'srv6 sid list': locators,
         'srv6 usid': srv6_sid,
     }
-    
+
 pathobj = json.dumps(pathdict, indent=4)
 # return(pathobj)
-print(pathobj)
+# print(pathobj)

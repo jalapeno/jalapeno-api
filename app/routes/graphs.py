@@ -3,6 +3,7 @@ from typing import List, Optional, Dict, Any
 from arango import ArangoClient
 from ..config.settings import Settings
 import logging
+from ..utils.path_processor import process_path_data
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -857,7 +858,8 @@ async def get_shortest_path(
                 "message": "No path found between specified nodes"
             }
         
-        return {
+        # Get the existing response
+        response = {
             "found": True,
             "path": results[0]['path'],
             "hopcount": results[0]['hopcount'],
@@ -866,6 +868,12 @@ async def get_shortest_path(
             "destination_info": results[0]['destination_info'],
             "direction": direction
         }
+        
+        # Process and append the SRv6 data
+        srv6_data = process_path_data(results[0]['path'], source, destination)
+        response["srv6_data"] = srv6_data
+        
+        return response
         
     except Exception as e:
         print(f"Error finding shortest path: {str(e)}")
@@ -883,7 +891,7 @@ async def get_shortest_path_latency(
     direction: str = "outbound"  # or "inbound", "any"
 ):
     """
-    Find shortest path between two nodes in a graph using latency as weight
+    Find shortest path between two nodes using latency as weight
     """
     try:
         db = get_db()
@@ -966,7 +974,8 @@ async def get_shortest_path_latency(
                 "message": "No path found between specified nodes"
             }
         
-        return {
+        # Get the existing response
+        response = {
             "found": True,
             "path": results[0]['path'],
             "hopcount": results[0]['hopcount'],
@@ -976,6 +985,12 @@ async def get_shortest_path_latency(
             "direction": direction,
             "total_latency": results[0]['total_latency']
         }
+        
+        # Process and append the SRv6 data
+        srv6_data = process_path_data(results[0]['path'], source, destination)
+        response["srv6_data"] = srv6_data
+        
+        return response
         
     except Exception as e:
         print(f"Error finding shortest path with latency weight: {str(e)}")
@@ -993,7 +1008,7 @@ async def get_shortest_path_utilization(
     direction: str = "outbound"  # or "inbound", "any"
 ):
     """
-    Find shortest path between two nodes in a graph using percent_util_out as weight
+    Find shortest path between two nodes using utilization as weight
     """
     try:
         db = get_db()
@@ -1010,7 +1025,7 @@ async def get_shortest_path_utilization(
                 detail="Direction must be 'outbound', 'inbound', or 'any'"
             )
         
-        # AQL query for shortest path with utilization weight and detailed information
+        # AQL query for shortest path with detailed information
         aql = f"""
         WITH igp_node
         LET path = (
@@ -1077,7 +1092,8 @@ async def get_shortest_path_utilization(
                 "message": "No path found between specified nodes"
             }
         
-        return {
+        # Get the existing response
+        response = {
             "found": True,
             "path": results[0]['path'],
             "hopcount": results[0]['hopcount'],
@@ -1087,6 +1103,12 @@ async def get_shortest_path_utilization(
             "direction": direction,
             "average_utilization": results[0]['average_utilization']
         }
+        
+        # Process and append the SRv6 data
+        srv6_data = process_path_data(results[0]['path'], source, destination)
+        response["srv6_data"] = srv6_data
+        
+        return response
         
     except Exception as e:
         print(f"Error finding shortest path with utilization weight: {str(e)}")
@@ -1104,7 +1126,7 @@ async def get_shortest_path_load(
     direction: str = "outbound"  # or "inbound", "any"
 ):
     """
-    Find shortest path between two nodes in a graph using load as weight
+    Find shortest path between two nodes using load as weight
     """
     try:
         db = get_db()
@@ -1121,7 +1143,7 @@ async def get_shortest_path_load(
                 detail="Direction must be 'outbound', 'inbound', or 'any'"
             )
         
-        # AQL query for shortest path with load weight and detailed information
+        # AQL query for shortest path with detailed information
         aql = f"""
         WITH igp_node
         LET path = (
@@ -1188,7 +1210,8 @@ async def get_shortest_path_load(
                 "message": "No path found between specified nodes"
             }
         
-        return {
+        # Get the existing response
+        response = {
             "found": True,
             "path": results[0]['path'],
             "hopcount": results[0]['hopcount'],
@@ -1198,6 +1221,12 @@ async def get_shortest_path_load(
             "direction": direction,
             "average_load": results[0]['average_load']
         }
+        
+        # Process and append the SRv6 data
+        srv6_data = process_path_data(results[0]['path'], source, destination)
+        response["srv6_data"] = srv6_data
+        
+        return response
         
     except Exception as e:
         print(f"Error finding shortest path with load weight: {str(e)}")
