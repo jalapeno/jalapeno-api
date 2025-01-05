@@ -6,6 +6,23 @@ from typing import Optional, List
 router = APIRouter()
 settings = Settings()
 
+KNOWN_COLLECTIONS = {
+    'graphs': [
+        'ipv4_graph',
+        'ipv6_graph',
+        'igpv4_graph',
+        'igpv6_graph'
+    ],
+    'prefixes': [
+        'ebgp_prefix_v4',
+        'ebgp_prefix_v6'
+    ],
+    'peers': [
+        'bgp_node',
+        'igp_node'
+    ]
+}
+
 def get_db():
     client = ArangoClient(hosts=settings.database_server)
     try:
@@ -20,6 +37,49 @@ def get_db():
             status_code=500,
             detail=f"Could not connect to database: {str(e)}"
         )
+@router.get("/collections")
+async def get_collections(filter_graphs: Optional[bool] = None):
+    """
+    Get a list of collections in the database
+    Optional: filter_graphs parameter:
+    - None (default): show all collections
+    - True: show only graph collections
+    - False: show only non-graph collections
+    """
+    try:
+        db = get_db()
+        # Get all collections
+        collections = db.collections()
+        
+        # Filter out system collections (those starting with '_')
+        # Then apply graph filter if specified
+        user_collections = [
+            {
+                'name': c['name'],
+                'type': c['type'],
+                'status': c['status'],
+                'count': db.collection(c['name']).count()
+            }
+            for c in collections
+            if not c['name'].startswith('_') and 
+               (filter_graphs is None or  # Show all if no filter
+                (filter_graphs and c['name'].endswith('_graph')) or  # Only graphs
+                (not filter_graphs and not c['name'].endswith('_graph')))  # Only non-graphs
+        ]
+        
+        # Sort by name
+        user_collections.sort(key=lambda x: x['name'])
+        
+        return {
+            'collections': user_collections,
+            'total_count': len(user_collections),
+            'filter_applied': 'all' if filter_graphs is None else ('graphs' if filter_graphs else 'non_graphs')
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=str(e)
+        )
 
 @router.get("/collection/{collection_name}")
 async def get_collection_data(
@@ -29,7 +89,7 @@ async def get_collection_data(
     filter_key: Optional[str] = None
 ):
     """
-    Query any collection in the database with optional filtering
+    Query any collection in the database with optional filtering and special handling for graphs
     """
     try:
         db = get_db()
@@ -64,11 +124,36 @@ async def get_collection_data(
         
         results = [doc for doc in cursor]
         
-        return {
-            'collection': collection_name,
-            'count': len(results),
-            'data': results
-        }
+        # If it's a graph collection, also get vertices
+        if collection_name in KNOWN_COLLECTIONS['graphs']:
+            vertex_collections = set()
+            for edge in results:
+                vertex_collections.add(edge['_from'].split('/')[0])
+                vertex_collections.add(edge['_to'].split('/')[0])
+            
+            vertices = []
+            for vertex_col in vertex_collections:
+                try:
+                    if db.has_collection(vertex_col):
+                        vertices.extend([v for v in db.collection(vertex_col).all()])
+                except Exception as e:
+                    print(f"Warning: Could not fetch vertices from {vertex_col}: {e}")
+            
+            return {
+                'collection': collection_name,
+                'type': 'graph',
+                'edge_count': len(results),
+                'vertex_count': len(vertices),
+                'edges': results,
+                'vertices': vertices
+            }
+        else:
+            return {
+                'collection': collection_name,
+                'type': 'collection',
+                'count': len(results),
+                'data': results
+            }
         
     except Exception as e:
         print(f"Error querying collection: {str(e)}")
@@ -111,153 +196,29 @@ async def get_collection_keys(collection_name: str):
             detail=str(e)
         )
 
-@router.get("/collection/ls_node_extended/srv6_nodes")
-async def get_srv6_node_data():
+@router.get("/collection/{collection_name}/info")
+async def get_collection_info(collection_name: str):
     """
-    Get SRv6 SID information and node names from ls_node_extended collection
+    Get metadata about any collection
     """
     try:
         db = get_db()
-        if not db.has_collection('ls_node_extended'):
+        if not db.has_collection(collection_name):
             raise HTTPException(
                 status_code=404,
-                detail="ls_node_extended collection not found"
+                detail=f"Collection {collection_name} not found"
             )
         
-        # AQL query to get node names and SRv6 information
-        aql = """
-        FOR node IN ls_node_extended
-            FILTER node.sids != null
-            RETURN {
-                key: node._key,
-                node_name: node.name,
-                router_id: node.router_id,
-                asn: node.asn,
-                srv6_sids: node.sids
-            }
-        """
-        
-        cursor = db.aql.execute(aql)
-        results = [doc for doc in cursor]
+        collection = db.collection(collection_name)
         
         return {
-            'count': len(results),
-            'nodes': results
+            "name": collection_name,
+            #"type": collection_type,
+            "count": collection.count(),
+            "properties": collection.properties()
         }
-        
     except Exception as e:
-        print(f"Error getting SRv6 node data: {str(e)}")
         raise HTTPException(
             status_code=500,
             detail=str(e)
         )
-
-@router.get("/collection/ls_node_extended/node/{node_name}")
-async def get_node_details(node_name: str):
-    """
-    Get detailed information for a specific node
-    """
-    try:
-        db = get_db()
-        if not db.has_collection('ls_node_extended'):
-            raise HTTPException(
-                status_code=404,
-                detail="ls_node_extended collection not found"
-            )
-        
-        # AQL query to get specific node details
-        aql = """
-        FOR node IN ls_node_extended
-            FILTER node._key == @node_name
-            RETURN {
-                key: node._key,
-                node_name: node.name,
-                router_id: node.router_id,
-                asn: node.asn,
-                srv6_sids: node.sids,
-                protocol: node.protocol,
-                area_id: node.area_id,
-                domain_id: node.domain_id,
-                protocol_id: node.protocol_id
-            }
-        """
-        
-        cursor = db.aql.execute(aql, bind_vars={'node_name': node_name})
-        results = [doc for doc in cursor]
-        
-        if not results:
-            raise HTTPException(
-                status_code=404,
-                detail=f"Node {node_name} not found"
-            )
-        
-        return results[0]
-        
-    except Exception as e:
-        print(f"Error getting node details: {str(e)}")
-        raise HTTPException(
-            status_code=500,
-            detail=str(e)
-        )
-
-@router.get("/collection/ls_node_extended/search")
-async def search_nodes(
-    asn: Optional[int] = None,
-    protocol: Optional[str] = None,
-    srv6_enabled: Optional[bool] = None
-):
-    """
-    Search nodes with various filters
-    """
-    try:
-        db = get_db()
-        if not db.has_collection('ls_node_extended'):
-            raise HTTPException(
-                status_code=404,
-                detail="ls_node_extended collection not found"
-            )
-        
-        # Build AQL query based on filters
-        aql = "FOR node IN ls_node_extended"
-        filters = []
-        bind_vars = {}
-        
-        if asn is not None:
-            filters.append("node.asn == @asn")
-            bind_vars['asn'] = asn
-        if protocol:
-            filters.append("node.protocol == @protocol")
-            bind_vars['protocol'] = protocol
-        if srv6_enabled is not None:
-            if srv6_enabled:
-                filters.append("node.sids != null")
-            else:
-                filters.append("node.sids == null")
-        
-        if filters:
-            aql += " FILTER " + " AND ".join(filters)
-        
-        aql += """ 
-        RETURN {
-            node_name: node._key,
-            router_id: node.router_id,
-            asn: node.asn,
-            protocol: node.protocol,
-            srv6_enabled: node.sids != null
-        }
-        """
-        
-        cursor = db.aql.execute(aql, bind_vars=bind_vars)
-        results = [doc for doc in cursor]
-        
-        return {
-            'count': len(results),
-            'nodes': results
-        }
-        
-    except Exception as e:
-        print(f"Error searching nodes: {str(e)}")
-        raise HTTPException(
-            status_code=500,
-            detail=str(e)
-        ) 

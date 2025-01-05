@@ -28,7 +28,8 @@ KNOWN_COLLECTIONS = {
         'ebgp_prefix_v6'
     ],
     'peers': [
-        'bgp_node'
+        'bgp_node',
+        'igp_node'
     ]
 }
 
@@ -47,18 +48,15 @@ def get_db():
             detail=f"Could not connect to database: {str(e)}"
         )
 
+
 ###################
 # Collection Routes
 ###################
 
-@router.get("/collections")
-async def get_collections(filter_graphs: Optional[bool] = None):
+@router.get("/graphs")
+async def get_graphs(filter_graphs: Optional[bool] = None):
     """
-    Get a list of collections in the database
-    Optional: filter_graphs parameter:
-    - None (default): show all collections
-    - True: show only graph collections
-    - False: show only non-graph collections
+    Get a list of graph collections in the database
     """
     try:
         db = get_db()
@@ -67,7 +65,7 @@ async def get_collections(filter_graphs: Optional[bool] = None):
         
         # Filter out system collections (those starting with '_')
         # Then apply graph filter if specified
-        user_collections = [
+        graph_collections = [
             {
                 'name': c['name'],
                 'type': c['type'],
@@ -75,19 +73,15 @@ async def get_collections(filter_graphs: Optional[bool] = None):
                 'count': db.collection(c['name']).count()
             }
             for c in collections
-            if not c['name'].startswith('_') and 
-               (filter_graphs is None or  # Show all if no filter
-                (filter_graphs and c['name'].endswith('_graph')) or  # Only graphs
-                (not filter_graphs and not c['name'].endswith('_graph')))  # Only non-graphs
+            if not c['name'].startswith('_') and c['name'].endswith('_graph')
         ]
         
         # Sort by name
-        user_collections.sort(key=lambda x: x['name'])
+        graph_collections.sort(key=lambda x: x['name'])
         
         return {
-            'collections': user_collections,
-            'total_count': len(user_collections),
-            'filter_applied': 'all' if filter_graphs is None else ('graphs' if filter_graphs else 'non_graphs')
+            'collections': graph_collections,
+            'total_count': len(graph_collections)
         }
     except Exception as e:
         raise HTTPException(
@@ -95,90 +89,90 @@ async def get_collections(filter_graphs: Optional[bool] = None):
             detail=str(e)
         )
 
-@router.get("/collections/{collection_name}")
-async def get_collection_data(collection_name: str):
+@router.get("/graphs/{collection_name}")
+async def get_graph(collection_name: str):
     """
-    Get data from any collection (graph, prefix, or peer)
-    """
-    try:
-        db = get_db()
-        if not db.has_collection(collection_name):
-            raise HTTPException(
-                status_code=404,
-                detail=f"Collection {collection_name} not found"
-            )
-        
-        collection = db.collection(collection_name)
-        data = [doc for doc in collection.all()]
-        
-        # If it's a graph collection, also get vertices
-        if collection_name in KNOWN_COLLECTIONS['graphs']:
-            vertex_collections = set()
-            for edge in data:
-                vertex_collections.add(edge['_from'].split('/')[0])
-                vertex_collections.add(edge['_to'].split('/')[0])
-            
-            vertices = []
-            for vertex_col in vertex_collections:
-                try:
-                    if db.has_collection(vertex_col):
-                        vertices.extend([v for v in db.collection(vertex_col).all()])
-                except Exception as e:
-                    print(f"Warning: Could not fetch vertices from {vertex_col}: {e}")
-            
-            return {
-                "type": "graph",
-                "edges": data,
-                "vertices": vertices
-            }
-        else:
-            return {
-                "type": "collection",
-                "data": data
-            }
-    except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=str(e)
-        )
-
-@router.get("/collections/{collection_name}/info")
-async def get_collection_info(collection_name: str):
-    """
-    Get metadata about any collection
+    Get information about a specific graph collection
     """
     try:
         db = get_db()
         if not db.has_collection(collection_name):
             raise HTTPException(
                 status_code=404,
-                detail=f"Collection {collection_name} not found"
+                detail=f"Graph collection {collection_name} not found"
+            )
+        
+        if not collection_name.endswith('_graph'):
+            raise HTTPException(
+                status_code=400,
+                detail=f"Collection {collection_name} is not a graph collection"
             )
         
         collection = db.collection(collection_name)
-        collection_type = "unknown"
-        for category, collections in KNOWN_COLLECTIONS.items():
-            if collection_name in collections:
-                collection_type = category
-                break
+        properties = collection.properties()
         
         return {
-            "name": collection_name,
-            "type": collection_type,
-            "count": collection.count(),
-            "properties": collection.properties()
+            'name': collection_name,
+            'type': properties['type'],
+            'status': properties['status'],
+            'count': collection.count()
         }
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(
             status_code=500,
             detail=str(e)
         )
 
-################
-# Vertex Routes
-################
+@router.get("/graphs/{collection_name}/info")
+async def get_graph_info(collection_name: str):
+    """
+    Get detailed information about a graph collection
+    """
+    try:
+        db = get_db()
+        if not db.has_collection(collection_name):
+            raise HTTPException(
+                status_code=404,
+                detail=f"Graph collection {collection_name} not found"
+            )
+        
+        if not collection_name.endswith('_graph'):
+            raise HTTPException(
+                status_code=400,
+                detail=f"Collection {collection_name} is not a graph collection"
+            )
+        
+        collection = db.collection(collection_name)
+        properties = collection.properties()
+        statistics = collection.statistics()
+        
+        # Get vertex collections connected to this graph
+        vertex_collections = set()
+        for edge in collection:
+            vertex_collections.add(edge['_from'].split('/')[0])
+            vertex_collections.add(edge['_to'].split('/')[0])
+        
+        return {
+            'name': collection_name,
+            'properties': properties,
+            'statistics': statistics,
+            'vertex_collections': list(vertex_collections)
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=str(e)
+        )
 
-@router.get("/collections/{collection_name}/vertices")
+###################
+# Collection Routes
+###################
+
+@router.get("/graphs/{collection_name}/vertices")
 async def get_vertex_info(collection_name: str):
     """
     Get vertex information from a graph collection's edges
@@ -250,7 +244,7 @@ async def get_vertex_info(collection_name: str):
             detail=str(e)
         ) 
 
-@router.get("/collections/{collection_name}/vertices/keys")
+@router.get("/graphs/{collection_name}/vertices/keys")
 async def get_vertex_keys(collection_name: str):
     """
     Get just the keys of vertices referenced in a graph collection
@@ -313,7 +307,7 @@ async def get_vertex_keys(collection_name: str):
             detail=str(e)
         ) 
 
-@router.get("/collections/{collection_name}/vertices/ids")
+@router.get("/graphs/{collection_name}/vertices/ids")
 async def get_vertex_ids(collection_name: str):
     """
     Get both _key and _id for vertices referenced in a graph collection
@@ -372,7 +366,7 @@ async def get_vertex_ids(collection_name: str):
             detail=str(e)
         ) 
 
-@router.get("/collections/{collection_name}/vertices/summary")
+@router.get("/graphs/{collection_name}/vertices/summary")
 async def get_vertex_summary(
     collection_name: str, 
     limit: int = 100,
@@ -478,7 +472,7 @@ async def get_vertex_summary(
 # Edge Routes
 ################
 
-@router.get("/collections/{collection_name}/edges")
+@router.get("/graphs/{collection_name}/edges")
 async def get_edge_connections(collection_name: str):
     """
     Get only the _from and _to fields from a graph collection
@@ -531,7 +525,7 @@ async def get_edge_connections(collection_name: str):
             detail=str(e)
         ) 
 
-@router.get("/collections/{collection_name}/edges/detail")
+@router.get("/graphs/{collection_name}/edges/detail")
 async def get_detailed_edge_connections(collection_name: str, limit: Optional[int] = None):
     """
     Get detailed edge information from a graph collection including metrics and properties
@@ -613,7 +607,7 @@ async def get_detailed_edge_connections(collection_name: str, limit: Optional[in
 # Topology Route
 ################
 
-@router.get("/collections/{collection_name}/topology")
+@router.get("/graphs/{collection_name}/topology")
 async def get_topology(
     collection_name: str, 
     include_all_fields: bool = True  # New optional parameter
@@ -692,7 +686,7 @@ async def get_topology(
             detail=str(e)
         )
 
-@router.get("/collections/{collection_name}/topology/nodes")
+@router.get("/graphs/{collection_name}/topology/nodes")
 async def get_node_topology(
     collection_name: str, 
     include_all_fields: bool = True  # Default to returning all fields
@@ -785,7 +779,7 @@ async def get_node_topology(
 ##############################
 
 # basic shortest path
-@router.get("/collections/{collection_name}/shortest_path")
+@router.get("/graphs/{collection_name}/shortest_path")
 async def get_shortest_path(
     collection_name: str,
     source: str,
@@ -881,7 +875,7 @@ async def get_shortest_path(
         )
 
 # latency weighted shortest path
-@router.get("/collections/{collection_name}/shortest_path/latency")
+@router.get("/graphs/{collection_name}/shortest_path/latency")
 async def get_shortest_path_latency(
     collection_name: str,
     source: str,
@@ -991,7 +985,7 @@ async def get_shortest_path_latency(
         )
 
 # weighted shortest path - outbound utilization
-@router.get("/collections/{collection_name}/shortest_path/utilization")
+@router.get("/graphs/{collection_name}/shortest_path/utilization")
 async def get_shortest_path_utilization(
     collection_name: str,
     source: str,
@@ -1102,7 +1096,7 @@ async def get_shortest_path_utilization(
         )
 
 # weighted shortest path - load
-@router.get("/collections/{collection_name}/shortest_path/load")
+@router.get("/graphs/{collection_name}/shortest_path/load")
 async def get_shortest_path_load(
     collection_name: str,
     source: str,
@@ -1212,7 +1206,7 @@ async def get_shortest_path_load(
             detail=str(e)
         )
 
-@router.get("/collections/{collection_name}/traverse")
+@router.get("/graphs/{collection_name}/traverse")
 async def traverse_graph(
     collection_name: str,
     source: str,
@@ -1309,7 +1303,7 @@ async def traverse_graph(
             detail=str(e)
         )
 
-@router.get("/collections/{collection_name}/traverse/simple")
+@router.get("/graphs/{collection_name}/traverse/simple")
 async def traverse_graph_simple(
     collection_name: str,
     source: str,
@@ -1385,7 +1379,7 @@ async def traverse_graph_simple(
             detail=str(e)
         ) 
 
-@router.get("/collections/{collection_name}/neighbors")
+@router.get("/graphs/{collection_name}/neighbors")
 async def get_neighbors(
     collection_name: str,
     source: str,
