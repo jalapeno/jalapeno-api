@@ -176,3 +176,16 @@ curl "http://localhost:8000/api/v1/collections/ipv6_graph/shortest_path/latency?
 curl "http://198.18.133.111:30800/api/v1/collections/ipv6_graph/shortest_path/utilization?source=gpus/host08-gpu02&destination=gpus/host12-gpu02&direction=outbound"
 
 curl "http://198.18.133.111:30800/api/v1/collections/ipv6_graph/shortest_path/utilization?source=gpus/host08-gpu02&destination=gpus/host12-gpu02&direction=inbound"
+
+
+# load
+curl "http://localhost:8000/api/v1/graphs/ipv6_graph/shortest_path/load?source=gpus/host01-gpu02&destination=gpus/host12-gpu02&direction=any"
+
+# reset load with AQL
+FOR edge IN ipv6_graph
+  UPDATE edge WITH { load: 0 } IN ipv6_graph
+
+## or with curl
+curl -X POST "http://localhost:8000/api/v1/graphs/ipv6_graph/edges" \
+     -H "Content-Type: application/json" \
+     -d '{"attribute": "load", "value": 0}'

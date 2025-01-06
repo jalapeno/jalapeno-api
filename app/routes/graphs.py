@@ -4,6 +4,7 @@ from arango import ArangoClient
 from ..config.settings import Settings
 import logging
 from ..utils.path_processor import process_path_data
+from ..utils.load_processor import process_load_data
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -1225,6 +1226,13 @@ async def get_shortest_path_load(
         # Process and append the SRv6 data
         srv6_data = process_path_data(results[0]['path'], source, destination)
         response["srv6_data"] = srv6_data
+        
+        # Get database connection
+        db = get_db()
+        
+        # Process load data with db connection
+        load_data = process_load_data(results[0]['path'], collection_name, db)
+        response["load_data"] = load_data
         
         return response
         

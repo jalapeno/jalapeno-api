@@ -11,12 +11,7 @@ def process_path_data(
     """
     Process shortest path data to extract SRv6 information
     """
-    #print("path_data", path_data)
     try:
-        # Debug logging
-        print("=== Debug Path Processor ===")
-        print(f"Received path_data type: {type(path_data)}")
-        print(f"Received path_data: {json.dumps(path_data, indent=2)}")
         
         # Calculate path metrics
         hopcount = len(path_data)
@@ -25,7 +20,7 @@ def process_path_data(
         # Extract SID locators
         locators = []
         for node in path_data:
-            print(f"Processing node: {json.dumps(node, indent=2)}")
+            # print(f"Processing node: {json.dumps(node, indent=2)}")
             # Check for vertex and sids in the vertex object
             if 'vertex' in node and 'sids' in node['vertex']:
                 vertex_sids = node['vertex']['sids']
@@ -33,7 +28,7 @@ def process_path_data(
                     sid = vertex_sids[0].get('srv6_sid')
                     if sid:
                         locators.append(sid)
-                        print(f"Added SID: {sid}")
+                        # print(f"Added SID: {sid}")
         
         print(f"Collected locators: {locators}")
         
@@ -45,7 +40,7 @@ def process_path_data(
                 sid_value = usid_list[1]
                 usid_int = sid_value.split(':')
                 usid.append(usid_int[0])
-                print(f"Processed USID: {usid_int[0]}")
+                # print(f"Processed USID: {usid_int[0]}")
         
         # Build SRv6 USID carrier
         sidlist = ":".join(usid) + ":"
@@ -56,7 +51,7 @@ def process_path_data(
             'srv6_sid_list': locators,
             'srv6_usid': srv6_sid
         }
-        print(f"Returning result: {json.dumps(result, indent=2)}")
+        # print(f"Returning result: {json.dumps(result, indent=2)}")
         return result
         
     except Exception as e:
