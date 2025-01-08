@@ -81,7 +81,7 @@ async def get_collections(filter_graphs: Optional[bool] = None):
             detail=str(e)
         )
 
-@router.get("/collection/{collection_name}")
+@router.get("/collections/{collection_name}")
 async def get_collection_data(
     collection_name: str,
     limit: Optional[int] = None,
@@ -162,7 +162,7 @@ async def get_collection_data(
             detail=str(e)
         )
 
-@router.get("/collection/{collection_name}/keys")
+@router.get("/collections/{collection_name}/keys")
 async def get_collection_keys(collection_name: str):
     """
     Get just the _key values from a collection
@@ -196,7 +196,7 @@ async def get_collection_keys(collection_name: str):
             detail=str(e)
         )
 
-@router.get("/collection/{collection_name}/info")
+@router.get("/collections/{collection_name}/info")
 async def get_collection_info(collection_name: str):
     """
     Get metadata about any collection

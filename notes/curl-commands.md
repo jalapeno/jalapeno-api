@@ -173,7 +173,7 @@ curl "http://localhost:8000/api/v1/graphs/ipv6_graph/shortest_path/latency?sourc
 
 curl "http://localhost:8000/api/v1/collections/ipv6_graph/shortest_path/latency?source=gpus/host08-gpu02&destination=gpus/host12-gpu02&direction=outbound"
 
-curl "http://198.18.133.111:30800/api/v1/collections/ipv6_graph/shortest_path/utilization?source=gpus/host08-gpu02&destination=gpus/host12-gpu02&direction=outbound"
+curl "http://198.18.133.111:30800/api/v1/graphs/ipv6_graph/shortest_path/utilization?source=gpus/host08-gpu02&destination=gpus/host12-gpu02&direction=outbound"
 
 curl "http://198.18.133.111:30800/api/v1/collections/ipv6_graph/shortest_path/utilization?source=gpus/host08-gpu02&destination=gpus/host12-gpu02&direction=inbound"
 
