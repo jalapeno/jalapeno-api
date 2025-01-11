@@ -1243,6 +1243,175 @@ async def get_shortest_path_load(
             detail=str(e)
         )
 
+@router.get("/graphs/{collection_name}/shortest_path/next-best-path")
+async def get_next_best_paths(
+    collection_name: str,
+    source: str,
+    destination: str,
+    direction: str = "outbound"
+):
+    """
+    Find the shortest path and alternative paths with similar hop counts.
+    """
+    try:
+        db = get_db()
+        if not db.has_collection(collection_name):
+            raise HTTPException(
+                status_code=404,
+                detail=f"Collection {collection_name} not found"
+            )
+        
+        # Debug prints for shortest path
+        print(f"\nProcessing next-best-path request:")
+        print(f"Source: {source}")
+        print(f"Destination: {destination}")
+        print(f"Direction: {direction}")
+        
+        # First query: Get shortest path and its hop count
+        shortest_path_query = f"""
+        WITH igp_node
+        LET path = (
+            FOR v, e IN {direction}
+                SHORTEST_PATH '{source}' TO '{destination}'
+                {collection_name}
+                RETURN {{
+                    vertex: {{
+                        _id: v._id,
+                        _key: v._key,
+                        router_id: v.router_id,
+                        prefix: v.prefix,
+                        name: v.name,
+                        sids: v.sids
+                    }},
+                    edge: e ? {{
+                        _id: e._id,
+                        _key: e._key,
+                        _from: e._from,
+                        _to: e._to,
+                        latency: e.latency,
+                        percent_util_out: e.percent_util_out,
+                        load: e.load
+                    }} : null
+                }}
+        )
+        RETURN {{
+            path: path,
+            hopcount: LENGTH(path) - 1
+        }}
+        """
+        
+        cursor = db.aql.execute(shortest_path_query)
+        results = [doc for doc in cursor]
+        
+        if not results:
+            return {
+                "found": False,
+                "message": "No path found between specified nodes"
+            }
+            
+        shortest_result = results[0]
+        base_hopcount = shortest_result['hopcount']
+        print(f"Found shortest path with {base_hopcount} hops")
+        
+        # Second query: Get alternative paths with same hop count
+        same_hop_query = f"""
+        WITH igp_node
+        FOR v, e, p IN {base_hopcount}..{base_hopcount} {direction.upper()}
+            '{source}' {collection_name}
+            OPTIONS {{ uniquePaths: true, bfs: true }}
+            FILTER v._id == '{destination}'
+            LIMIT 4
+            RETURN {{
+                path: (
+                    FOR vertex IN p.vertices
+                    RETURN {{
+                        vertex: vertex
+                    }}
+                ),
+                hopcount: LENGTH(p.vertices) - 1
+            }}
+        """
+        
+        # Third query: Get paths with hop count + 1
+        plus_one_hop_query = f"""
+        WITH igp_node
+        FOR v, e, p IN {base_hopcount + 1}..{base_hopcount + 1} {direction.upper()}
+            '{source}' {collection_name}
+            OPTIONS {{ uniquePaths: true, bfs: true }}
+            FILTER v._id == '{destination}'
+            LIMIT 8
+            RETURN {{
+                path: (
+                    FOR vertex IN p.vertices
+                    RETURN {{
+                        vertex: vertex
+                    }}
+                ),
+                hopcount: LENGTH(p.vertices) - 1
+            }}
+        """
+        
+        # Debug prints
+        print(f"\nProcessing next-best-path request:")
+        print(f"Source: {source}")
+        print(f"Destination: {destination}")
+        print(f"Direction: {direction}")
+        print(f"Found shortest path with {base_hopcount} hops")
+        
+        # Execute same hop query
+        print(f"\nSearching for paths with same hop count ({base_hopcount})...")
+        same_hop_cursor = db.aql.execute(same_hop_query)
+        same_hop_paths = [doc for doc in same_hop_cursor]
+        print(f"Found {len(same_hop_paths)} alternative paths with {base_hopcount} hops")
+        
+        # Execute plus one hop query
+        print(f"\nSearching for paths with hop count + 1 ({base_hopcount + 1})...")
+        plus_one_cursor = db.aql.execute(plus_one_hop_query)
+        plus_one_paths = [doc for doc in plus_one_cursor]
+        print(f"Found {len(plus_one_paths)} paths with {base_hopcount + 1} hops")
+        
+        # Process SRv6 data for all paths
+        shortest_srv6 = process_path_data(shortest_result['path'], source, destination)
+        same_hop_srv6_data = [
+            process_path_data(path['path'], source, destination)
+            for path in same_hop_paths
+        ]
+        plus_one_srv6_data = [
+            process_path_data(path['path'], source, destination)
+            for path in plus_one_paths
+        ]
+        
+        return {
+            "found": True,
+            "shortest_path": {
+                "path": shortest_result['path'],
+                "hopcount": shortest_result['hopcount'],
+                "srv6_data": shortest_srv6
+            },
+            "same_hopcount_paths": [{
+                "path": path['path'],
+                "hopcount": path['hopcount'],
+                "srv6_data": srv6
+            } for path, srv6 in zip(same_hop_paths, same_hop_srv6_data)],
+            "plus_one_hopcount_paths": [{
+                "path": path['path'],
+                "hopcount": path['hopcount'],
+                "srv6_data": srv6
+            } for path, srv6 in zip(plus_one_paths, plus_one_srv6_data)],
+            "summary": {
+                "base_hopcount": base_hopcount,
+                "same_hopcount_alternatives": len(same_hop_paths),
+                "plus_one_hopcount_alternatives": len(plus_one_paths)
+            }
+        }
+        
+    except Exception as e:
+        print(f"Error finding next best paths: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=str(e)
+        )
+
 @router.get("/graphs/{collection_name}/traverse")
 async def traverse_graph(
     collection_name: str,
