@@ -1118,6 +1118,92 @@ async def get_shortest_path_utilization(
             detail=str(e)
         )
 
+@router.get("/graphs/{collection_name}/shortest_path/sovereignty")
+async def get_shortest_path_sovereignty(
+    collection_name: str,
+    source: str,
+    destination: str,
+    excluded_countries: str,
+    direction: str = "outbound"
+):
+    """
+    Find shortest path between two nodes while avoiding specified countries.
+    """
+    try:
+        db = get_db()
+        if not db.has_collection(collection_name):
+            raise HTTPException(
+                status_code=404,
+                detail=f"Collection {collection_name} not found"
+            )
+        
+        # Convert comma-separated countries to list and create filter conditions
+        countries = [c.strip().upper() for c in excluded_countries.split(',')]
+        country_filters = ' AND '.join([f'p.edges[*].country_codes !like "%{country}%"' for country in countries])
+        
+        # AQL query matching the working manual query but with additional path details
+        aql = f"""
+        FOR p IN {direction.upper()} k_shortest_paths
+            '{source}' TO '{destination}'
+            {collection_name}
+            OPTIONS {{uniqueVertices: "path", bfs: true}}
+            FILTER {country_filters}
+            LIMIT 1
+            RETURN {{
+                path: (
+                    FOR v IN p.vertices
+                    RETURN {{
+                        vertex: {{
+                            _id: v._id,
+                            _key: v._key,
+                            name: v.name,
+                            sids: v.sids
+                        }}
+                    }}
+                ),
+                countries_traversed: p.edges[*].country_codes[*],
+                hopcount: LENGTH(p.vertices) - 1,
+                vertex_count: LENGTH(p.vertices),
+                source_info: FIRST(p.vertices),
+                destination_info: LAST(p.vertices)
+            }}
+        """
+        
+        cursor = db.aql.execute(aql)
+        results = [doc for doc in cursor]
+        
+        if not results:
+            return {
+                "found": False,
+                "message": f"No path found between specified nodes avoiding countries: {excluded_countries}"
+            }
+        
+        # Create response with summary data
+        response = {
+            "found": True,
+            "path": results[0]['path'],
+            "hopcount": results[0]['hopcount'],
+            "vertex_count": results[0]['vertex_count'],
+            "source_info": results[0]['source_info'],
+            "destination_info": results[0]['destination_info'],
+            "direction": direction,
+            "countries_traversed": results[0]['countries_traversed'],
+            "excluded_countries": countries
+        }
+        
+        # Process and append the SRv6 data
+        srv6_data = process_path_data(results[0]['path'], source, destination)
+        response["srv6_data"] = srv6_data
+        
+        return response
+        
+    except Exception as e:
+        print(f"Error finding path with sovereignty constraints: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=str(e)
+        )
+
 # weighted shortest path - load
 @router.get("/graphs/{collection_name}/shortest_path/load")
 async def get_shortest_path_load(

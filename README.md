@@ -32,9 +32,10 @@ jalapeno-api/
 1. API Setup
 
 ```bash
-cd api
-python -m venv venv
+cd app
+python3 -m venv venv
 source venv/bin/activate 
+cd ..
 pip install -r requirements.txt
 uvicorn app.main:app --reload
 ```
