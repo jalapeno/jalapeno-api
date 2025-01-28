@@ -1329,15 +1329,105 @@ async def get_shortest_path_load(
             detail=str(e)
         )
 
+@router.get("/graphs/{collection_name}/shortest_path/best-paths")
+async def get_best_paths(
+    collection_name: str,
+    source: str,
+    destination: str,
+    limit: int = 4,
+    direction: str = "outbound"
+):
+    """
+    Find multiple best paths between source and destination nodes.
+    Default limit is 4 paths, but user can specify more or fewer.
+    """
+    try:
+        db = get_db()
+        if not db.has_collection(collection_name):
+            raise HTTPException(
+                status_code=404,
+                detail=f"Collection {collection_name} not found"
+            )
+        
+        # AQL query to get multiple paths
+        aql = f"""
+        FOR p IN {direction.upper()} k_shortest_paths
+            '{source}' TO '{destination}'
+            {collection_name}
+            OPTIONS {{uniqueVertices: "path", bfs: true}}
+            LIMIT {limit}
+            RETURN {{
+                path: (
+                    FOR v IN p.vertices
+                    RETURN {{
+                        vertex: {{
+                            _id: v._id,
+                            _key: v._key,
+                            name: v.name,
+                            sids: v.sids
+                        }}
+                    }}
+                ),
+                countries_traversed: p.edges[*].country_codes[*],
+                hopcount: LENGTH(p.vertices) - 1,
+                vertex_count: LENGTH(p.vertices),
+                source_info: FIRST(p.vertices),
+                destination_info: LAST(p.vertices)
+            }}
+        """
+        
+        cursor = db.aql.execute(aql)
+        results = [doc for doc in cursor]
+        
+        if not results:
+            return {
+                "found": False,
+                "message": "No paths found between specified nodes"
+            }
+        
+        # Process each path and create response
+        paths = []
+        for result in results:
+            path_response = {
+                "path": result['path'],
+                "hopcount": result['hopcount'],
+                "vertex_count": result['vertex_count'],
+                "source_info": result['source_info'],
+                "destination_info": result['destination_info'],
+                "countries_traversed": result['countries_traversed']
+            }
+            
+            # Process and append SRv6 data for each path
+            srv6_data = process_path_data(result['path'], source, destination)
+            path_response["srv6_data"] = srv6_data
+            paths.append(path_response)
+        
+        return {
+            "found": True,
+            "total_paths_found": len(paths),
+            "direction": direction,
+            "paths": paths
+        }
+        
+    except Exception as e:
+        print(f"Error finding best paths: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=str(e)
+        )
+
 @router.get("/graphs/{collection_name}/shortest_path/next-best-path")
 async def get_next_best_paths(
     collection_name: str,
     source: str,
     destination: str,
+    same_hop_limit: int = 4,
+    plus_one_limit: int = 8,
     direction: str = "outbound"
 ):
     """
     Find the shortest path and alternative paths with similar hop counts.
+    Allows customization of how many paths to return for each hop count.
     """
     try:
         db = get_db()
@@ -1406,7 +1496,7 @@ async def get_next_best_paths(
             '{source}' {collection_name}
             OPTIONS {{ uniquePaths: true, bfs: true }}
             FILTER v._id == '{destination}'
-            LIMIT 4
+            LIMIT {same_hop_limit}
             RETURN {{
                 path: (
                     FOR vertex IN p.vertices
@@ -1425,7 +1515,7 @@ async def get_next_best_paths(
             '{source}' {collection_name}
             OPTIONS {{ uniquePaths: true, bfs: true }}
             FILTER v._id == '{destination}'
-            LIMIT 8
+            LIMIT {plus_one_limit}
             RETURN {{
                 path: (
                     FOR vertex IN p.vertices
@@ -1669,7 +1759,7 @@ async def traverse_graph_simple(
         raise HTTPException(
             status_code=500,
             detail=str(e)
-        ) 
+        )
 
 @router.get("/graphs/{collection_name}/neighbors")
 async def get_neighbors(

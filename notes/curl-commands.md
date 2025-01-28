@@ -178,8 +178,24 @@ curl "http://198.18.133.111:30800/api/v1/graphs/ipv6_graph/shortest_path/utiliza
 curl "http://198.18.133.111:30800/api/v1/graphs/ipv6_graph/shortest_path/utilization?source=gpus/host08-gpu02&destination=gpus/host12-gpu02&direction=inbound"
 
 
+# shortest path with country exclusion
+curl -X GET "http://198.18.128.101:30800/api/v1/graphs/ipv6_graph/shortest_path/sovereignty?source=hosts/berlin-k8s&destination=hosts/rome&excluded_countries=FRA&direction=outbound" | jq .
+
 # load
 curl "http://localhost:8000/api/v1/graphs/ipv6_graph/shortest_path/load?source=gpus/host01-gpu02&destination=gpus/host12-gpu02&direction=any"
+
+
+# best path
+```
+curl -X GET "http://localhost:8000/api/v1/graphs/ipv6_graph/shortest_path/best-paths?source=hosts/amsterdam&destination=hosts/rome&direction=outbound" | jq .
+
+curl -X GET "http://localhost:8000/api/v1/graphs/ipv6_graph/shortest_path/best-paths?source=hosts/amsterdam&destination=hosts/rome&direction=outbound&limit=6" | jq .
+``
+
+# next best path
+```
+curl -X GET "http://localhost:8000/api/v1/graphs/ipv6_graph/shortest_path/next-best-path?source=hosts/berlin-k8s&destination=hosts/rome&direction=outbound"
+```
 
 # reset load with AQL
 FOR edge IN ipv6_graph
@@ -189,3 +205,5 @@ FOR edge IN ipv6_graph
 curl -X POST "http://localhost:8000/api/v1/graphs/ipv6_graph/edges" \
      -H "Content-Type: application/json" \
      -d '{"attribute": "load", "value": 0}'
+
+
