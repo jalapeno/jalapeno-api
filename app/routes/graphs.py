@@ -1466,6 +1466,7 @@ async def get_next_best_paths(
                         _to: e._to,
                         latency: e.latency,
                         percent_util_out: e.percent_util_out,
+                        country_codes: e.country_codes,
                         load: e.load
                     }} : null
                 }}
@@ -1473,6 +1474,7 @@ async def get_next_best_paths(
         RETURN {{
             path: path,
             hopcount: LENGTH(path) - 1
+            
         }}
         """
         
