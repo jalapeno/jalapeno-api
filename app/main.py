@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from .config.settings import Settings
-from .routes import graphs, instances, collections
+from .routes import graphs, instances, collections, vpns
 
 app = FastAPI(
     title="Network UI API",
@@ -25,6 +25,7 @@ settings = Settings()
 app.include_router(instances.router, prefix="/api/v1", tags=["instances"])
 app.include_router(graphs.router, prefix="/api/v1", tags=["graphs"])
 app.include_router(collections.router, prefix="/api/v1", tags=["collections"])
+app.include_router(vpns.router, prefix="/api/v1", tags=["vpns"])
 
 @app.get("/health")
 async def health_check():

@@ -87,43 +87,43 @@ curl "http://localhost:8000/api/v1/collection/peer/keys"
 
 #### Search by ASN only
 ```
-curl "http://localhost:8000/api/v1/collection/ls_node_extended/search?asn=65001"
+curl "http://localhost:8000/api/v1/collection/igp_node/search?asn=65001"
 ```
 
 #### Search by protocol only
 ```
-curl "http://localhost:8000/api/v1/collection/ls_node_extended/search?protocol=IS-IS%20Level%202"
+curl "http://localhost:8000/api/v1/collection/igp_node/search?protocol=IS-IS%20Level%202"
 ```
 
 #### Search with multiple filters
 ```
-curl "http://localhost:8000/api/v1/collection/ls_node_extended/search?asn=65001&srv6_enabled=true"
+curl "http://localhost:8000/api/v1/collection/igp_node/search?asn=65001&srv6_enabled=true"
 ```
 
 ## Graphs
 
 #### Find shortest path
 ```
-curl "http://localhost:8000/api/v1/graphs/ipv6_graph/shortest_path?from_node=ls_node_extended/2_0_0_0000.0001.0065&to_node=ls_node_extended/2_0_0_0000.0002.0067"
+curl "http://localhost:8000/api/v1/graphs/ipv6_graph/shortest_path?from_node=igp_node/2_0_0_0000.0001.0065&to_node=igp_node/2_0_0_0000.0002.0067"
 ```
 
 #### For outbound (default)
 ```
-curl "http://localhost:8000/api/v1/graphs/ipv6_graph/shortest_path?source=ls_node_extended/2_0_0_0000.0001.0065&destination=ls_node_extended/2_0_0_0000.0002.0067"
+curl "http://localhost:8000/api/v1/graphs/ipv6_graph/shortest_path?source=igp_node/2_0_0_0000.0001.0065&destination=igp_node/2_0_0_0000.0002.0067"
 ```
 
 #### For inbound
 ```
-curl "http://localhost:8000/api/v1/graphs/ipv6_graph/shortest_path?source=ls_node_extended/2_0_0_0000.0001.0065&destination=ls_node_extended/2_0_0_0000.0002.0067&direction=inbound"
+curl "http://localhost:8000/api/v1/graphs/ipv6_graph/shortest_path?source=igp_node/2_0_0_0000.0001.0065&destination=igp_node/2_0_0_0000.0002.0067&direction=inbound"
 ```
 
 #### For any direction
 ```
-curl "http://localhost:8000/api/v1/graphs/ipv6_graph/shortest_path?source=ls_node_extended/2_0_0_0000.0001.0065&destination=ls_node_extended/2_0_0_0000.0002.0067&direction=any"
+curl "http://localhost:8000/api/v1/graphs/ipv6_graph/shortest_path?source=igp_node/2_0_0_0000.0001.0065&destination=igp_node/2_0_0_0000.0002.0067&direction=any"
 ```
 
 ```
-curl "http://localhost:8000/api/v1/graphs/ipv6_graph/shortest_path?source=ls_node_extended/2_0_0_0000.0001.0065&destination=ls_node_extended/2_0_0_0000.0002.0067"
+curl "http://localhost:8000/api/v1/graphs/ipv6_graph/shortest_path?source=igp_node/2_0_0_0000.0000.0004&destination=igp_node/2_0_0_0000.0000.0007"
 ```
 
 #### prefix to prefix
@@ -135,7 +135,7 @@ curl "http://localhost:8000/api/v1/graphs/ipv6_graph/shortest_path?source=ls_pre
 
 #### simple traverse graph
 ```
-curl "http://localhost:8000/api/v1/graphs/ipv6_graph/traverse/simple?source=ls_prefix/2_0_2_0_0_fc00:0:701:1::_64_0000.0001.0065&destination=ls_node_extended/2_0_0_0000.0002.0067"
+curl "http://localhost:8000/api/v1/graphs/ipv6_graph/traverse/simple?source=ls_prefix/2_0_2_0_0_fc00:0:701:1::_64_0000.0001.0065&destination=igp_node/2_0_0_0000.0002.0067"
 ```
 
 ```
@@ -151,34 +151,34 @@ curl "http://localhost:8000/api/v1/graphs/ipv6_graph/traverse/simple?source=ls_p
 #### Complex traverse graph
 
 ```
-curl "http://localhost:8000/api/v1/graphs/ipv6_graph/traverse?source=ls_node_extended/2_0_0_0000.0001.0065&max_depth=3"
+curl "http://localhost:8000/api/v1/graphs/ipv6_graph/traverse?source=igp_node/2_0_0_0000.0001.0065&max_depth=3"
 ```
 
 
 ```
-curl "http://localhost:8000/api/v1/graphs/ipv6_graph/traverse?source=ls_prefix/2_0_2_0_0_fc00:0:701:1::_64_0000.0001.0065&destination=ls_node_extended/2_0_0_0000.0002.0067&max_depth=5&direction=any"
+curl "http://localhost:8000/api/v1/graphs/ipv6_graph/traverse?source=ls_prefix/2_0_2_0_0_fc00:0:701:1::_64_0000.0001.0065&destination=igp_node/2_0_0_0000.0002.0067&max_depth=5&direction=any"
 ```
 
 
 
 #### Get neighbors
 ```
-curl "http://localhost:8000/api/v1/graphs/ipv6_graph/neighbors?node=ls_node_extended/2_0_0_0000.0001.0001"
+curl "http://localhost:8000/api/v1/graphs/ipv6_graph/neighbors?node=igp_node/2_0_0_0000.0001.0001"
 ```
 
 #### Get immediate neighbors
 ```
-curl "http://localhost:8000/api/v1/graphs/ipv6_graph/neighbors?source=ls_node_extended/2_0_0_0000.0001.0065"
+curl "http://localhost:8000/api/v1/graphs/ipv6_graph/neighbors?source=igp_node/2_0_0_0000.0001.0065"
 ```
 
 #### Get neighbors with specific direction
 ```
-curl "http://localhost:8000/api/v1/graphs/ipv6_graph/neighbors?source=ls_node_extended/2_0_0_0000.0001.0065&direction=any"
+curl "http://localhost:8000/api/v1/graphs/ipv6_graph/neighbors?source=igp_node/2_0_0_0000.0001.0065&direction=any"
 ```
 
 #### Get neighbors with greater depth
 ```
-curl "http://localhost:8000/api/v1/graphs/ipv6_graph/neighbors?source=ls_node_extended/2_0_0_0000.0001.0065&depth=2"
+curl "http://localhost:8000/api/v1/graphs/ipv6_graph/neighbors?source=igp_node/2_0_0_0000.0001.0065&depth=2"
 ```
 
 
