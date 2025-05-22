@@ -690,6 +690,127 @@ async def search_vpn_prefixes(
             detail=str(e)
         )
 
+@router.get("/vpns/{collection_name}/prefixes/by-pe-rt")
+async def get_vpn_prefixes_by_pe_rt(
+    collection_name: str,
+    pe_router: str,
+    route_target: str,
+    limit: int = 100
+):
+    """
+    Get VPN prefixes that match both a specific PE router (nexthop) and route target.
+    
+    Parameters:
+    - pe_router: The PE router's nexthop address
+    - route_target: The route target to filter by
+    - limit: Maximum number of results to return
+    """
+    try:
+        db = get_db()
+        if not db.has_collection(collection_name):
+            raise HTTPException(
+                status_code=404,
+                detail=f"Collection {collection_name} not found"
+            )
+        
+        # Verify it's a VPN prefix collection
+        if collection_name not in VPN_COLLECTIONS['prefixes']:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Collection {collection_name} is not a VPN prefix collection"
+            )
+        
+        # Format the route target to match how it's stored
+        formatted_rt = f"rt={route_target}"
+        
+        # Get prefixes matching both PE router and route target
+        aql = f"""
+        FOR doc IN {collection_name}
+            FILTER doc.nexthop == @pe_router
+            FILTER @route_target IN doc.base_attrs.ext_community_list
+            LIMIT {limit}
+            RETURN {{
+                _key: doc._key,
+                prefix: doc.prefix,
+                prefix_len: doc.prefix_len,
+                vpn_rd: doc.vpn_rd,
+                nexthop: doc.nexthop,
+                labels: doc.labels,
+                peer_asn: doc.peer_asn,
+                route_targets: (
+                    FOR rt IN doc.base_attrs.ext_community_list
+                    FILTER STARTS_WITH(rt, 'rt=')
+                    RETURN SUBSTRING(rt, 3)
+                ),
+                srv6_sid: doc.prefix_sid.srv6_l3_service.sub_tlvs["1"][0].sid
+            }}
+        """
+        
+        cursor = db.aql.execute(aql, bind_vars={
+            'pe_router': pe_router,
+            'route_target': formatted_rt
+        })
+        results = [doc for doc in cursor]
+        
+        # Convert labels to hex in Python and rename to 'function'
+        for doc in results:
+            if 'labels' in doc and doc['labels']:
+                # Convert to hex, trim trailing zeros, and ensure it's at least 4 characters (16 bits)
+                doc['function'] = [
+                    format(label, 'x').rstrip('0') or '0'  # If all zeros were stripped, return '0'
+                    for label in doc['labels']
+                ]
+                
+                # Ensure each function value is at least 4 characters (16 bits)
+                doc['function'] = [
+                    f if len(f) >= 4 else f.zfill(4)
+                    for f in doc['function']
+                ]
+                
+                # Create the combined SID field
+                if 'srv6_sid' in doc and doc['srv6_sid'] and doc['function']:
+                    # Get the base SRv6 SID
+                    base_sid = doc['srv6_sid']
+                    # Remove trailing colons if present
+                    if base_sid.endswith('::'):
+                        base_sid = base_sid[:-2]
+                    elif base_sid.endswith(':'):
+                        base_sid = base_sid[:-1]
+                    
+                    # Create the combined SID for each function
+                    doc['sid'] = [f"{base_sid}:{func}::" for func in doc['function']]
+        
+        # Get total count
+        aql_count = f"""
+        FOR doc IN {collection_name}
+            FILTER doc.nexthop == @pe_router
+            FILTER @route_target IN doc.base_attrs.ext_community_list
+            COLLECT AGGREGATE count = COUNT()
+            RETURN count
+        """
+        
+        count_cursor = db.aql.execute(aql_count, bind_vars={
+            'pe_router': pe_router,
+            'route_target': formatted_rt
+        })
+        total_count = [count for count in count_cursor][0]
+        
+        return {
+            'collection': collection_name,
+            'pe_router': pe_router,
+            'route_target': route_target,
+            'total_prefixes': total_count,
+            'prefixes': results,
+            'limit_applied': limit
+        }
+        
+    except Exception as e:
+        logger.error(f"Error in get_vpn_prefixes_by_pe_rt: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=str(e)
+        )
+
 # Add this at the bottom of the file
 print("\nRegistered routes in vpns.py:")
 for route in router.routes:
