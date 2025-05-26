@@ -43,7 +43,7 @@ def process_path_data(
                 # print(f"Processed USID: {usid_int[0]}")
         
         # Build SRv6 USID carrier
-        sidlist = ":".join(usid) + ":"
+        sidlist = ":".join(usid) + "::"
         srv6_sid = usid_block + sidlist
         print(f"Final SRv6 SID: {srv6_sid}")
         
