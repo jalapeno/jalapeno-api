@@ -1246,7 +1246,10 @@ async def get_shortest_path_load(
                         _id: v._id,
                         _key: v._key,
                         router_id: v.router_id,
+                        ipv4_address: v.ipv4_address,
+                        ipv6_address: v.ipv6_address,
                         prefix: v.prefix,
+                        prefix_len: v.prefix_len,
                         name: v.name,
                         sids: v.sids
                     }},
