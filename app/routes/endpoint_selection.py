@@ -22,7 +22,6 @@ SUPPORTED_METRICS = {
     'cost_per_hour': {'type': 'numeric', 'optimize': 'minimize'},
     'gpu_model': {'type': 'string', 'optimize': 'exact_match'},
     'language_model': {'type': 'string', 'optimize': 'exact_match'},
-    'available_capacity': {'type': 'numeric', 'optimize': 'maximize'},
     'response_time': {'type': 'numeric', 'optimize': 'minimize'}
 }
 
