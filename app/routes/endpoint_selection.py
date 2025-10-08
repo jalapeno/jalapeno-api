@@ -56,15 +56,17 @@ async def get_endpoint_selection_info():
         for collection in all_collections:
             collection_name = collection['name']
             # Look for collections that might be graph collections
-            # Common patterns: *_graph, igp_*, topology_*, etc.
-            if any(pattern in collection_name.lower() for pattern in ['graph', 'igp', 'topology', 'network']):
+            # Common patterns: *_graph, topology_*, network_*, etc.
+            # Exclude vertex collections like igp_domain, igp_node
+            if (any(pattern in collection_name.lower() for pattern in ['graph', 'topology', 'network']) and 
+                not any(vertex_pattern in collection_name.lower() for vertex_pattern in ['domain', 'node', 'vertex'])):
                 graph_collections.append(collection_name)
         
         return {
             'supported_metrics': SUPPORTED_METRICS,
             'description': 'Endpoint selection API for intelligent destination selection',
             'available_graph_collections': sorted(graph_collections),
-            'note': 'Use graph_collection parameter to specify which topology graph to use for path finding'
+            'note': 'Use graphs parameter to specify which topology graph to use for path finding'
         }
         
     except Exception as e:
@@ -73,7 +75,7 @@ async def get_endpoint_selection_info():
             'supported_metrics': SUPPORTED_METRICS,
             'description': 'Endpoint selection API for intelligent destination selection',
             'available_graph_collections': [],
-            'note': 'Use graph_collection parameter to specify which topology graph to use for path finding'
+            'note': 'Use graphs parameter to specify which topology graph to use for path finding'
         }
 
 @router.get("/endpoint-selection/{collection_name}")
@@ -131,7 +133,7 @@ async def select_optimal_endpoint(
     source: str = Query(..., description="Source endpoint ID"),
     metric: str = Query(..., description="Metric to optimize for"),
     value: Optional[str] = Query(None, description="Required value for exact match metrics"),
-    graph_collection: str = Query(..., description="Graph collection to use for path finding"),
+    graphs: str = Query(..., description="Graph collection to use for path finding"),
     direction: str = Query("outbound", description="Direction for path finding")
 ):
     """
@@ -240,7 +242,7 @@ async def select_optimal_endpoint(
         
         try:
             path_result = await get_shortest_path(
-                collection_name=graph_collection,
+                collection_name=graphs,
                 source=source,
                 destination=destination,
                 direction=direction
@@ -287,7 +289,7 @@ async def select_from_specific_endpoints(
     destinations: str = Query(..., description="Comma-separated list of destination endpoint IDs"),
     metric: str = Query(..., description="Metric to optimize for"),
     value: Optional[str] = Query(None, description="Required value for exact match metrics"),
-    graph_collection: str = Query(..., description="Graph collection to use for path finding"),
+    graphs: str = Query(..., description="Graph collection to use for path finding"),
     direction: str = Query("outbound", description="Direction for path finding")
 ):
     """
@@ -404,7 +406,7 @@ async def select_from_specific_endpoints(
         
         try:
             path_result = await get_shortest_path(
-                collection_name=graph_collection,
+                collection_name=graphs,
                 source=source,
                 destination=destination,
                 direction=direction
