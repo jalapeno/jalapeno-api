@@ -46,10 +46,35 @@ async def get_endpoint_selection_info():
     """
     Get information about endpoint selection capabilities
     """
-    return {
-        'supported_metrics': SUPPORTED_METRICS,
-        'description': 'Endpoint selection API for intelligent destination selection'
-    }
+    try:
+        db = get_db()
+        
+        # Get all collections to identify potential graph collections
+        all_collections = db.collections()
+        graph_collections = []
+        
+        for collection in all_collections:
+            collection_name = collection['name']
+            # Look for collections that might be graph collections
+            # Common patterns: *_graph, igp_*, topology_*, etc.
+            if any(pattern in collection_name.lower() for pattern in ['graph', 'igp', 'topology', 'network']):
+                graph_collections.append(collection_name)
+        
+        return {
+            'supported_metrics': SUPPORTED_METRICS,
+            'description': 'Endpoint selection API for intelligent destination selection',
+            'available_graph_collections': sorted(graph_collections),
+            'note': 'Use graph_collection parameter to specify which topology graph to use for path finding'
+        }
+        
+    except Exception as e:
+        logger.warning(f"Could not fetch graph collections: {str(e)}")
+        return {
+            'supported_metrics': SUPPORTED_METRICS,
+            'description': 'Endpoint selection API for intelligent destination selection',
+            'available_graph_collections': [],
+            'note': 'Use graph_collection parameter to specify which topology graph to use for path finding'
+        }
 
 @router.get("/endpoint-selection/{collection_name}")
 async def get_collection_endpoints(
@@ -106,7 +131,7 @@ async def select_optimal_endpoint(
     source: str = Query(..., description="Source endpoint ID"),
     metric: str = Query(..., description="Metric to optimize for"),
     value: Optional[str] = Query(None, description="Required value for exact match metrics"),
-    graph_collection: str = Query("igpv4_graph", description="Graph collection to use for path finding"),
+    graph_collection: str = Query(..., description="Graph collection to use for path finding"),
     direction: str = Query("outbound", description="Direction for path finding")
 ):
     """
@@ -262,7 +287,7 @@ async def select_from_specific_endpoints(
     destinations: str = Query(..., description="Comma-separated list of destination endpoint IDs"),
     metric: str = Query(..., description="Metric to optimize for"),
     value: Optional[str] = Query(None, description="Required value for exact match metrics"),
-    graph_collection: str = Query("igpv4_graph", description="Graph collection to use for path finding"),
+    graph_collection: str = Query(..., description="Graph collection to use for path finding"),
     direction: str = Query("outbound", description="Direction for path finding")
 ):
     """
