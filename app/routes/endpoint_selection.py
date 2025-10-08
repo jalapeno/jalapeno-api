@@ -3,6 +3,7 @@ from typing import List, Optional, Dict, Any, Union
 from arango import ArangoClient
 from ..config.settings import Settings
 import logging
+from .graphs import get_shortest_path
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -104,7 +105,9 @@ async def select_optimal_endpoint(
     collection_name: str,
     source: str = Query(..., description="Source endpoint ID"),
     metric: str = Query(..., description="Metric to optimize for"),
-    value: Optional[str] = Query(None, description="Required value for exact match metrics")
+    value: Optional[str] = Query(None, description="Required value for exact match metrics"),
+    graph_collection: str = Query("igpv4_graph", description="Graph collection to use for path finding"),
+    direction: str = Query("outbound", description="Direction for path finding")
 ):
     """
     Select optimal destination endpoint from a collection based on metrics
@@ -206,6 +209,25 @@ async def select_optimal_endpoint(
                 detail=f"Unknown optimization strategy: {optimization_strategy}"
             )
         
+        # Find shortest path to selected endpoint
+        destination = selected_endpoint['_id']
+        logger.info(f"Finding shortest path from {source} to {destination}...")
+        
+        try:
+            path_result = await get_shortest_path(
+                collection_name=graph_collection,
+                source=source,
+                destination=destination,
+                direction=direction
+            )
+        except Exception as path_error:
+            logger.warning(f"Could not find path: {str(path_error)}")
+            path_result = {
+                "found": False,
+                "error": str(path_error),
+                "message": "No path found between specified nodes"
+            }
+        
         return {
             'collection': collection_name,
             'source': source,
@@ -214,7 +236,14 @@ async def select_optimal_endpoint(
             'metric_value': selected_endpoint.get(metric),
             'optimization_strategy': optimization_strategy,
             'total_endpoints_evaluated': len(endpoints),
-            'valid_endpoints_count': len(valid_endpoints) if 'valid_endpoints' in locals() else len(endpoints)
+            'valid_endpoints_count': len(valid_endpoints) if 'valid_endpoints' in locals() else len(endpoints),
+            'path_result': path_result,
+            'summary': {
+                'destination': destination,
+                'destination_name': selected_endpoint.get('name', 'Unknown'),
+                'path_found': path_result.get('found', False),
+                'hop_count': path_result.get('hopcount', 0)
+            }
         }
         
     except HTTPException:
@@ -232,7 +261,9 @@ async def select_from_specific_endpoints(
     source: str = Query(..., description="Source endpoint ID"),
     destinations: str = Query(..., description="Comma-separated list of destination endpoint IDs"),
     metric: str = Query(..., description="Metric to optimize for"),
-    value: Optional[str] = Query(None, description="Required value for exact match metrics")
+    value: Optional[str] = Query(None, description="Required value for exact match metrics"),
+    graph_collection: str = Query("igpv4_graph", description="Graph collection to use for path finding"),
+    direction: str = Query("outbound", description="Direction for path finding")
 ):
     """
     Select optimal destination from a specific list of endpoints
@@ -342,6 +373,25 @@ async def select_from_specific_endpoints(
                 key=lambda x: x.get(metric)
             )
         
+        # Find shortest path to selected endpoint
+        destination = selected_endpoint['_id']
+        logger.info(f"Finding shortest path from {source} to {destination}...")
+        
+        try:
+            path_result = await get_shortest_path(
+                collection_name=graph_collection,
+                source=source,
+                destination=destination,
+                direction=direction
+            )
+        except Exception as path_error:
+            logger.warning(f"Could not find path: {str(path_error)}")
+            path_result = {
+                "found": False,
+                "error": str(path_error),
+                "message": "No path found between specified nodes"
+            }
+        
         return {
             'collection': collection_name,
             'source': source,
@@ -350,7 +400,14 @@ async def select_from_specific_endpoints(
             'metric_value': selected_endpoint.get(metric),
             'optimization_strategy': optimization_strategy,
             'total_candidates': len(endpoints),
-            'valid_endpoints_count': len(valid_endpoints) if 'valid_endpoints' in locals() else len(endpoints)
+            'valid_endpoints_count': len(valid_endpoints) if 'valid_endpoints' in locals() else len(endpoints),
+            'path_result': path_result,
+            'summary': {
+                'destination': destination,
+                'destination_name': selected_endpoint.get('name', 'Unknown'),
+                'path_found': path_result.get('found', False),
+                'hop_count': path_result.get('hopcount', 0)
+            }
         }
         
     except HTTPException:
