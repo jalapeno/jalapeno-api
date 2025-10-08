@@ -58,11 +58,6 @@ kubectl apply -f k8s/
 - Database: ArangoDB (Jalapeno)
 - Deployment: Kubernetes
 
-## Contributing
-[Contributing guidelines]
-
-## License
-[License information]
 
 
 
