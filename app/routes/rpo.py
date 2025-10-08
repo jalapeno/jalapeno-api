@@ -40,10 +40,10 @@ def get_db():
             detail=f"Could not connect to database: {str(e)}"
         )
 
-@router.get("/endpoint-selection")
-async def get_endpoint_selection_info():
+@router.get("/rpo")
+async def get_rpo_info():
     """
-    Get information about endpoint selection capabilities
+    Get information about Route Path Optimization (RPO) capabilities
     """
     try:
         db = get_db()
@@ -63,7 +63,7 @@ async def get_endpoint_selection_info():
         
         return {
             'supported_metrics': SUPPORTED_METRICS,
-            'description': 'Endpoint selection API for intelligent destination selection',
+            'description': 'Route Path Optimization (RPO) API for intelligent destination selection',
             'available_graph_collections': sorted(graph_collections),
             'note': 'Use graphs parameter to specify which topology graph to use for path finding'
         }
@@ -72,12 +72,12 @@ async def get_endpoint_selection_info():
         logger.warning(f"Could not fetch graph collections: {str(e)}")
         return {
             'supported_metrics': SUPPORTED_METRICS,
-            'description': 'Endpoint selection API for intelligent destination selection',
+            'description': 'Route Path Optimization (RPO) API for intelligent destination selection',
             'available_graph_collections': [],
             'note': 'Use graphs parameter to specify which topology graph to use for path finding'
         }
 
-@router.get("/endpoint-selection/{collection_name}")
+@router.get("/rpo/{collection_name}")
 async def get_collection_endpoints(
     collection_name: str,
     limit: Optional[int] = None
@@ -126,7 +126,7 @@ async def get_collection_endpoints(
             detail=str(e)
         )
 
-@router.get("/endpoint-selection/{collection_name}/select-optimal")
+@router.get("/rpo/{collection_name}/select-optimal")
 async def select_optimal_endpoint(
     collection_name: str,
     source: str = Query(..., description="Source endpoint ID"),
@@ -136,7 +136,7 @@ async def select_optimal_endpoint(
     direction: str = Query("outbound", description="Direction for path finding")
 ):
     """
-    Select optimal destination endpoint from a collection based on metrics
+    Select optimal destination endpoint from a collection based on metrics for Route Path Optimization
     """
     try:
         db = get_db()
@@ -281,7 +281,7 @@ async def select_optimal_endpoint(
             detail=str(e)
         )
 
-@router.get("/endpoint-selection/{collection_name}/select-from-list")
+@router.get("/rpo/{collection_name}/select-from-list")
 async def select_from_specific_endpoints(
     collection_name: str,
     source: str = Query(..., description="Source endpoint ID"),
@@ -292,7 +292,7 @@ async def select_from_specific_endpoints(
     direction: str = Query("outbound", description="Direction for path finding")
 ):
     """
-    Select optimal destination from a specific list of endpoints
+    Select optimal destination from a specific list of endpoints for Route Path Optimization
     """
     try:
         db = get_db()
