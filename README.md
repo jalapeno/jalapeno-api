@@ -6,12 +6,9 @@ A modern web interface for visualizing network topology data from ArangoDB/Jalap
 
 jalapeno-api/
 ├── app/
-│   ├── core/          # Core functionality, config, etc.
-│   ├── models/        # Pydantic models
+│   ├── config/        # config, etc.
 │   ├── routes/        # API endpoints
-│   ├── services/      # Business logic
 │   └── utils/         # Helper functions
-├── tests/             # Test files
 ├── k8s/               # Kubernetes configs
 ├── docs/              # API documentation
 ├── requirements.txt
