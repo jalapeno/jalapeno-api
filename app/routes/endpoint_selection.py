@@ -4,7 +4,7 @@ from arango import ArangoClient
 from ..config.settings import Settings
 import logging
 from ..utils.path_processor import process_path_data
-from .graphs import get_shortest_path
+# from .graphs import get_shortest_path
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -275,12 +275,13 @@ async def select_optimal_endpoint_endpoint(
         logger.info(f"Finding shortest path from {source} to {destination}...")
         
         # Call the existing shortest path functionality
-        path_result = await get_shortest_path(
-            collection_name=graph_collection,
-            source=source,
-            destination=destination,
-            direction=direction
-        )
+        # Temporarily return mock data to test routing
+        path_result = {
+            "found": True,
+            "path": [{"vertex": {"_id": destination, "name": "Test"}}],
+            "hopcount": 1,
+            "srv6_data": {"srv6_sid_list": [], "srv6_usid": "test::"}
+        }
         
         # Step 4: Combine results
         return {
@@ -393,12 +394,13 @@ async def select_from_specific_endpoints(
         destination = selected_endpoint['_id']
         
         # Find shortest path
-        path_result = await get_shortest_path(
-            collection_name=graph_collection,
-            source=source,
-            destination=destination,
-            direction=direction
-        )
+        # Temporarily return mock data to test routing
+        path_result = {
+            "found": True,
+            "path": [{"vertex": {"_id": destination, "name": "Test"}}],
+            "hopcount": 1,
+            "srv6_data": {"srv6_sid_list": [], "srv6_usid": "test::"}
+        }
         
         return {
             'endpoint_selection': selection_result,
