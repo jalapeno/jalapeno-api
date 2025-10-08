@@ -12,8 +12,6 @@ curl http://localhost:8000/api/v1/vpns/l3vpn_v4_prefix/route-targets | jq
 curl "http://localhost:8000/api/v1/vpns/l3vpn_v4_prefix/prefixes/by-rt?route_target=9:9" | jq
 curl "http://localhost:8000/api/v1/vpns/l3vpn_v4_prefix/prefixes/by-pe?pe_router=fc00:0:7::1" | jq
 
-curl "http://localhost:8000/vpns/l3vpn_v4_prefix/prefixes/by-pe-rt?pe_router=fc00:0:7::1&route_target=9:9"
-
 ```
 
 ## Prefix search
