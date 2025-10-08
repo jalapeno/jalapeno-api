@@ -204,19 +204,20 @@ def select_optimal_endpoint(
             detail=f"Error selecting optimal endpoint: {str(e)}"
         )
 
-@router.get("/endpoint-selection/supported-metrics")
-async def get_supported_metrics():
+@router.get("/endpoint-selection")
+async def get_endpoint_selection_info():
     """
-    Get list of supported metrics and their optimization strategies
+    Get information about endpoint selection capabilities
     """
     return {
-        'supported_metrics': SUPPORTED_METRICS
+        'supported_metrics': SUPPORTED_METRICS,
+        'description': 'Endpoint selection API for intelligent destination selection'
     }
 
-@router.get("/endpoint-selection/select-optimal-endpoint")
+@router.get("/endpoint-selection/{collection_name}/select-optimal")
 async def select_optimal_endpoint_endpoint(
+    collection_name: str,
     source: str = Query(..., description="Source endpoint ID"),
-    collection_name: str = Query(..., description="Collection name containing destination endpoints"),
     metric: str = Query(..., description="Metric to optimize for"),
     value: Optional[str] = Query(None, description="Required value for exact match metrics"),
     graph_collection: str = Query("igpv4_graph", description="Graph collection to use for path finding"),
@@ -307,8 +308,9 @@ async def select_optimal_endpoint_endpoint(
             detail=str(e)
         )
 
-@router.get("/endpoint-selection/select-from-list")
+@router.get("/endpoint-selection/{collection_name}/select-from-list")
 async def select_from_specific_endpoints(
+    collection_name: str,
     source: str = Query(..., description="Source endpoint ID"),
     destinations: str = Query(..., description="Comma-separated list of destination endpoint IDs"),
     metric: str = Query(..., description="Metric to optimize for"),
@@ -426,12 +428,57 @@ async def select_from_specific_endpoints(
             detail=str(e)
         )
 
-@router.get("/test")
-async def test_endpoint():
+@router.get("/endpoint-selection/{collection_name}")
+async def get_collection_endpoints(
+    collection_name: str,
+    limit: int = Query(100, description="Maximum number of endpoints to return")
+):
     """
-    Simple test endpoint to verify routing is working
+    Get all endpoints from a specific collection with their metrics
     """
-    return {"message": "Endpoint selection API is working", "status": "ok"}
+    try:
+        db = get_db()
+        
+        if not db.has_collection(collection_name):
+            raise HTTPException(
+                status_code=404,
+                detail=f"Collection {collection_name} not found"
+            )
+        
+        # Query all endpoints from the collection
+        endpoints_query = f"""
+        FOR doc IN {collection_name}
+            LIMIT {limit}
+            RETURN {{
+                _id: doc._id,
+                _key: doc._key,
+                name: doc.name,
+                prefix: doc.prefix,
+                router_id: doc.router_id,
+                sids: doc.sids,
+                cpu_utilization: doc.cpu_utilization,
+                gpu_utilization: doc.gpu_utilization,
+                memory_utilization: doc.memory_utilization
+            }}
+        """
+        
+        cursor = db.aql.execute(endpoints_query)
+        endpoints = [doc for doc in cursor]
+        
+        return {
+            'collection': collection_name,
+            'total_endpoints': len(endpoints),
+            'endpoints': endpoints
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting collection endpoints: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=str(e)
+        )
 
 # Add this at the bottom of the file
 print("\nRegistered routes in endpoint_selection.py:")
