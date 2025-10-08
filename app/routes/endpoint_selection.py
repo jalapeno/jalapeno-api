@@ -4,6 +4,7 @@ from arango import ArangoClient
 from ..config.settings import Settings
 import logging
 from ..utils.path_processor import process_path_data
+from .graphs import get_shortest_path
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -274,7 +275,6 @@ async def select_optimal_endpoint_endpoint(
         logger.info(f"Finding shortest path from {source} to {destination}...")
         
         # Call the existing shortest path functionality
-        from .graphs import get_shortest_path
         path_result = await get_shortest_path(
             collection_name=graph_collection,
             source=source,
@@ -393,7 +393,6 @@ async def select_from_specific_endpoints(
         destination = selected_endpoint['_id']
         
         # Find shortest path
-        from .graphs import get_shortest_path
         path_result = await get_shortest_path(
             collection_name=graph_collection,
             source=source,
