@@ -134,7 +134,41 @@ curl "http://localhost:8000/api/v1/rpo/hosts/select-from-list?source=hosts/rome&
 
 ---
 
-## 7. Complex Scenarios
+## 7. Flex-Algo Support
+
+### Select endpoint with default algo (algo 0)
+```bash
+curl "http://localhost:8000/api/v1/rpo/hosts/select-optimal?source=hosts/rome&metric=gpu_utilization&graphs=ipv6_graph"
+```
+
+### Select endpoint using Flex-Algo 128
+```bash
+curl "http://localhost:8000/api/v1/rpo/bgp_prefix_v4/select-optimal?source=bgp_prefix_v4/10.17.1.0_24&metric=gpu_utilization&graphs=ipv4_graph&algo=128" | jq
+```
+
+### Select endpoint using Flex-Algo 129
+```bash
+curl "http://localhost:8000/api/v1/rpo/bgp_prefix_v4/select-optimal?source=bgp_prefix_v4/10.17.1.0_24&metric=gpu_utilization&graphs=ipv4_graph&algo=129" | jq
+```
+
+### Select from list with Flex-Algo 128
+```bash
+curl "http://localhost:8000/api/v1/rpo/hosts/select-from-list?source=hosts/rome&destinations=hosts/amsterdam,hosts/berlin-k8s&metric=gpu_utilization&graphs=ipv6_graph&algo=128"
+```
+
+### Low latency path with Flex-Algo 128
+```bash
+curl "http://localhost:8000/api/v1/rpo/hosts/select-optimal?source=hosts/rome&metric=time_to_first_token&graphs=ipv6_graph&algo=128"
+```
+
+### Cost optimization with specific algo
+```bash
+curl "http://localhost:8000/api/v1/rpo/hosts/select-from-list?source=hosts/rome&destinations=hosts/amsterdam,hosts/berlin-k8s,hosts/london&metric=cost_per_million_tokens&graphs=ipv6_graph&algo=129"
+```
+
+---
+
+## 8. Complex Scenarios
 
 ### Multi-destination selection with cost optimization
 ```bash
@@ -213,7 +247,15 @@ All endpoints return comprehensive information including:
 ## Notes
 
 - **Required Parameters**: `source`, `metric`, `graphs`
-- **Optional Parameters**: `value` (required for exact_match metrics), `direction` (default: outbound)
+- **Optional Parameters**: 
+  - `value` (required for exact_match metrics)
+  - `direction` (default: outbound)
+  - `algo` (Flex-Algo ID, default: 0)
 - **Graph Collections**: Use the discovery endpoint to see available graphs
-- **SRv6 USID**: Generated automatically for path execution
+- **Flex-Algo**: Specify `algo` parameter to use specific Flex-Algo for path finding
+  - Default is algo 0 (standard SPF)
+  - Common values: 128 (low latency), 129 (high bandwidth), etc.
+  - Path will only traverse nodes that participate in the specified algo
+  - SRv6 SIDs are automatically selected based on the specified algo
+- **SRv6 USID**: Generated automatically for path execution based on algo
 - **Error Handling**: Comprehensive error messages for invalid parameters or missing data

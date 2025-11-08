@@ -133,7 +133,8 @@ async def select_optimal_endpoint(
     metric: str = Query(..., description="Metric to optimize for"),
     value: Optional[str] = Query(None, description="Required value for exact match metrics"),
     graphs: str = Query(..., description="Graph collection to use for path finding"),
-    direction: str = Query("outbound", description="Direction for path finding")
+    direction: str = Query("outbound", description="Direction for path finding"),
+    algo: Optional[int] = Query(None, description="Flex-Algo ID to use for path finding (default: 0)")
 ):
     """
     Select optimal destination endpoint from a collection based on metrics for Resource Path Optimization
@@ -244,7 +245,8 @@ async def select_optimal_endpoint(
                 collection_name=graphs,
                 source=source,
                 destination=destination,
-                direction=direction
+                direction=direction,
+                algo=algo
             )
         except Exception as path_error:
             logger.warning(f"Could not find path: {str(path_error)}")
@@ -261,6 +263,7 @@ async def select_optimal_endpoint(
             'optimization_metric': metric,
             'metric_value': selected_endpoint.get(metric),
             'optimization_strategy': optimization_strategy,
+            'algo': algo if algo is not None else 0,
             'total_endpoints_evaluated': len(endpoints),
             'valid_endpoints_count': len(valid_endpoints) if 'valid_endpoints' in locals() else len(endpoints),
             'path_result': path_result,
@@ -289,7 +292,8 @@ async def select_from_specific_endpoints(
     metric: str = Query(..., description="Metric to optimize for"),
     value: Optional[str] = Query(None, description="Required value for exact match metrics"),
     graphs: str = Query(..., description="Graph collection to use for path finding"),
-    direction: str = Query("outbound", description="Direction for path finding")
+    direction: str = Query("outbound", description="Direction for path finding"),
+    algo: Optional[int] = Query(None, description="Flex-Algo ID to use for path finding (default: 0)")
 ):
     """
     Select optimal destination from a specific list of endpoints for Resource Path Optimization
@@ -408,7 +412,8 @@ async def select_from_specific_endpoints(
                 collection_name=graphs,
                 source=source,
                 destination=destination,
-                direction=direction
+                direction=direction,
+                algo=algo
             )
         except Exception as path_error:
             logger.warning(f"Could not find path: {str(path_error)}")
@@ -425,6 +430,7 @@ async def select_from_specific_endpoints(
             'optimization_metric': metric,
             'metric_value': selected_endpoint.get(metric),
             'optimization_strategy': optimization_strategy,
+            'algo': algo if algo is not None else 0,
             'total_candidates': len(endpoints),
             'valid_endpoints_count': len(valid_endpoints) if 'valid_endpoints' in locals() else len(endpoints),
             'path_result': path_result,
