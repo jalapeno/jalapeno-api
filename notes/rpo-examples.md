@@ -1,7 +1,7 @@
-# Route Path Optimization (RPO) API Examples
+# Resource Path Optimization (RPO) API Examples
 
 ## Overview
-The Route Path Optimization (RPO) API provides intelligent destination selection based on metrics, combined with shortest path calculation and SRv6 USID generation.
+The Resource Path Optimization (RPO) API provides intelligent destination selection based on metrics, combined with shortest path calculation and SRv6 USID generation.
 
 ## Base URL
 ```
@@ -60,14 +60,9 @@ curl "http://localhost:8000/api/v1/rpo/hosts/select-optimal?source=hosts/rome&me
 curl "http://localhost:8000/api/v1/rpo/hosts/select-optimal?source=hosts/rome&metric=cost_per_million_tokens&graphs=ipv6_graph"
 ```
 
-### Select endpoint with highest available capacity
-```bash
-curl "http://localhost:8000/api/v1/rpo/hosts/select-optimal?source=hosts/rome&metric=available_capacity&graphs=ipv6_graph"
-```
-
 ### Select endpoint with specific GPU model (exact match)
 ```bash
-curl "http://localhost:8000/api/v1/rpo/hosts/select-optimal?source=hosts/rome&metric=gpu_model&value=A100&graphs=ipv6_graph"
+curl "http://localhost:8000/api/v1/rpo/hosts/select-optimal?source=hosts/rome&metric=gpu_model&value=GB300&graphs=ipv6_graph"
 ```
 
 ### Select endpoint with specific language model (exact match)
