@@ -225,6 +225,15 @@ curl http://localhost:8000/api/v1/collections?filter_graphs=false
 
 ```
 curl http://localhost:8000/api/v1/graphs/ipv6_graph/edges | jq .
+
+curl http://localhost:8000/api/v1/graphs/ipv6_graph/vertices | jq .
+
+curl http://localhost:8000/api/v1/graphs/ipv6_graph/vertices/ids | jq .
+```
+
+# Vertices by Algo
+```
+curl "http://localhost:8000/api/v1/graphs/ipv6_graph/vertices/algo?algo=129" | jq
 ```
 
 ```
@@ -248,12 +257,25 @@ curl http://localhost:8000/api/v1/graphs/ipv6_graph/topology/nodes
 curl http://localhost:8000/api/v1/graphs/ipv6_graph/topology/nodes?limit=50
 ```
 
+# Topology per Algo
+```
+curl "http://localhost:8000/api/v1/graphs/ipv6_graph/topology/nodes/algo?algo=129" | jq
+```
 
 # shortest path
 ```
 curl "http://localhost:8000/api/v1/graphs/ipv6_graph/shortest_path?source=gpus/host01-gpu01&destination=gpus/host12-gpu02"
 ```
 
+```
+curl "http://localhost:8000/api/v1/graphs/ipv4_graph/shortest_path?source=bgp_prefix_v4/10.10.46.0_24&destination=bgp_prefix_v4/96.1.0.0_24&direction=any" | jq
+
+curl "http://localhost:8000/api/v1/graphs/ipv4_graph/shortest_path?source=bgp_prefix_v4/10.10.46.0_24&destination=bgp_prefix_v4/96.1.0.0_24&direction=any&algo=0" | jq
+
+curl "http://localhost:8000/api/v1/graphs/ipv4_graph/shortest_path?source=bgp_prefix_v4/10.10.46.0_24&destination=bgp_prefix_v4/96.1.0.0_24&direction=any&algo=128" | jq
+
+curl "http://localhost:8000/api/v1/graphs/ipv4_graph/shortest_path?source=bgp_prefix_v4/10.10.46.0_24&destination=bgp_prefix_v4/96.1.0.0_24&direction=any&algo=129" | jq
+```
 
 ```
 curl "http://localhost:8000/api/v1/graphs/ipv6_graph/shortest_path?source=gpus/host08-gpu02&destination=gpus/host12-gpu02&direction=any"
@@ -282,9 +304,19 @@ curl "http://198.18.133.111:30800/api/v1/graphs/ipv6_graph/shortest_path/utiliza
 curl -X GET "http://198.18.128.101:30800/api/v1/graphs/ipv6_graph/shortest_path/sovereignty?source=hosts/berlin-k8s&destination=hosts/rome&excluded_countries=FRA&direction=outbound" | jq .
 ```
 
+# sovereignty with flex-algo
+```
+curl "http://localhost:8000/api/v1/graphs/ipv4_graph/shortest_path/sovereignty?source=bgp_prefix_v4/10.10.46.0_24&destination=bgp_prefix_v4/10.17.1.0_24&excluded_countries=FRA&direction=any&algo=0" | jq
+```
+
 # load
 ```
 curl "http://localhost:8000/api/v1/graphs/ipv6_graph/shortest_path/load?source=gpus/host01-gpu02&destination=gpus/host12-gpu02&direction=any"
+```
+
+# load with flex-algo
+```
+curl "http://localhost:8000/api/v1/graphs/ipv4_graph/shortest_path/load?source=bgp_prefix_v4/10.10.46.0_24&destination=bgp_prefix_v4/96.1.0.0_24&direction=any&algo=128" | jq
 ```
 
 
@@ -297,9 +329,23 @@ curl -X GET "http://localhost:8000/api/v1/graphs/ipv6_graph/shortest_path/best-p
 curl -X GET "http://localhost:8000/api/v1/graphs/ipv6_graph/shortest_path/best-paths?source=hosts/amsterdam&destination=hosts/rome&direction=outbound&limit=6" | jq .
 ```
 
+# best path with flex-algo
+```
+curl "http://localhost:8000/api/v1/graphs/ipv4_graph/shortest_path/best-paths?source=bgp_prefix_v4/10.17.1.0_24&destination=bgp_prefix_v4/96.1.0.0_24&limit=5&algo=130" | jq
+```
+
 # next best path
 ```
 curl -X GET "http://localhost:8000/api/v1/graphs/ipv6_graph/shortest_path/next-best-path?source=hosts/berlin-k8s&destination=hosts/rome&direction=outbound"
+```
+
+# next best path flex-algo
+```
+curl "http://localhost:8000/api/v1/graphs/ipv4_graph/shortest_path/next-best-path?source=bgp_prefix_v4/10.17.1.0_24&destination=bgp_prefix_v4/96.1.0.0_24&direction=any&algo=0" | jq
+
+curl "http://localhost:8000/api/v1/graphs/ipv4_graph/shortest_path/next-best-path?source=bgp_prefix_v4/10.17.1.0_24&destination=bgp_prefix_v4/96.1.0.0_24&direction=any&same_hop_limit=2&plus_one_limit=5&algo=0" | jq
+
+curl "http://localhost:8000/api/v1/graphs/ipv4_graph/shortest_path/next-best-path?source=bgp_prefix_v4/10.17.1.0_24&destination=bgp_prefix_v4/96.1.0.0_24&direction=any&algo=128" | jq
 ```
 
 # reset load with AQL

@@ -366,6 +366,108 @@ async def get_vertex_ids(collection_name: str):
         raise HTTPException(
             status_code=500,
             detail=str(e)
+        )
+
+@router.get("/graphs/{collection_name}/vertices/algo")
+async def get_vertices_by_algo(collection_name: str, algo: int = 0):
+    """
+    Get vertices that participate in a specific Flex-Algo.
+    Filters vertices based on the 'algo' field in their SRv6 endpoint behavior.
+    
+    Args:
+        collection_name: The graph collection name
+        algo: The algorithm ID to filter by (default: 0)
+        
+    Example:
+        GET /graphs/ipv6_graph/vertices/algo?algo=129
+    """
+    try:
+        db = get_db()
+        if not db.has_collection(collection_name):
+            raise HTTPException(
+                status_code=404,
+                detail=f"Collection {collection_name} not found"
+            )
+        
+        print(f"Getting vertices for collection: {collection_name} with algo: {algo}")
+        
+        try:
+            # Query to find all vertices that have the specified algo in their sids array
+            aql = f"""
+            FOR edge IN {collection_name}
+                // Get unique vertex IDs from both ends of edges
+                FOR vertex_id IN UNION_DISTINCT([edge._from], [edge._to])
+                    // Parse the collection and key from the vertex ID
+                    LET vertex_collection = PARSE_IDENTIFIER(vertex_id).collection
+                    LET vertex_key = PARSE_IDENTIFIER(vertex_id).key
+                    
+                    // Fetch the actual vertex document
+                    LET vertex = DOCUMENT(vertex_id)
+                    
+                    // Filter vertices that have sids with matching algo
+                    FILTER vertex != null
+                    FILTER HAS(vertex, 'sids') AND vertex.sids != null
+                    FILTER LENGTH(
+                        FOR sid IN vertex.sids
+                            FILTER HAS(sid, 'srv6_endpoint_behavior') 
+                            FILTER HAS(sid.srv6_endpoint_behavior, 'algo')
+                            FILTER sid.srv6_endpoint_behavior.algo == @algo
+                            RETURN sid
+                    ) > 0
+                    
+                    // Return vertex information with SID details
+                    RETURN DISTINCT {{
+                        _id: vertex._id,
+                        _key: vertex._key,
+                        collection: vertex_collection,
+                        name: HAS(vertex, 'name') ? vertex.name : null,
+                        router_id: HAS(vertex, 'router_id') ? vertex.router_id : null,
+                        sids: (
+                            FOR sid IN vertex.sids
+                                FILTER HAS(sid, 'srv6_endpoint_behavior')
+                                FILTER HAS(sid.srv6_endpoint_behavior, 'algo')
+                                FILTER sid.srv6_endpoint_behavior.algo == @algo
+                                RETURN {{
+                                    srv6_sid: sid.srv6_sid,
+                                    algo: sid.srv6_endpoint_behavior.algo,
+                                    endpoint_behavior: sid.srv6_endpoint_behavior.endpoint_behavior,
+                                    flag: sid.srv6_endpoint_behavior.flag
+                                }}
+                        )
+                    }}
+            """
+            
+            cursor = db.aql.execute(aql, bind_vars={'algo': algo})
+            results = [doc for doc in cursor]
+            
+            # Group results by collection for better organization
+            vertices_by_collection = {}
+            for vertex in results:
+                coll = vertex['collection']
+                if coll not in vertices_by_collection:
+                    vertices_by_collection[coll] = []
+                vertices_by_collection[coll].append(vertex)
+            
+            return {
+                'graph_collection': collection_name,
+                'algo': algo,
+                'total_vertices': len(results),
+                'vertex_collections': list(vertices_by_collection.keys()),
+                'vertices_by_collection': vertices_by_collection
+            }
+            
+        except Exception as e:
+            print(f"Error processing vertices by algo: {str(e)}")
+            raise HTTPException(
+                status_code=500,
+                detail=f"Error processing vertices by algo: {str(e)}"
+            )
+            
+    except Exception as e:
+        print(f"Error in get_vertices_by_algo: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=str(e)
         ) 
 
 @router.get("/graphs/{collection_name}/vertices/summary")
@@ -776,6 +878,142 @@ async def get_node_topology(
             detail=str(e)
         )
 
+@router.get("/graphs/{collection_name}/topology/nodes/algo")
+async def get_node_topology_by_algo(
+    collection_name: str,
+    algo: int = 0,
+    include_all_fields: bool = True
+):
+    """
+    Get topology information filtered to only node-to-node connections
+    that participate in a specific Flex-Algo.
+    
+    Args:
+        collection_name: The graph collection name
+        algo: The algorithm ID to filter by (default: 0)
+        include_all_fields: Return all fields or just essential ones (default: True)
+        
+    Example:
+        GET /graphs/ipv6_graph/topology/nodes/algo?algo=128
+    """
+    try:
+        db = get_db()
+        if not db.has_collection(collection_name):
+            raise HTTPException(
+                status_code=404,
+                detail=f"Collection {collection_name} not found"
+            )
+        
+        print(f"Getting topology for collection: {collection_name} with algo: {algo}")
+        
+        # First, get all vertices that participate in this algo
+        vertices_with_algo = set()
+        
+        # Query to find vertices with the specified algo
+        vertex_query = f"""
+        FOR edge IN {collection_name}
+            FILTER CONTAINS(edge._from, 'node') AND CONTAINS(edge._to, 'node')
+            FOR vertex_id IN UNION_DISTINCT([edge._from], [edge._to])
+                LET vertex = DOCUMENT(vertex_id)
+                FILTER vertex != null
+                FILTER HAS(vertex, 'sids') AND vertex.sids != null
+                FILTER LENGTH(
+                    FOR sid IN vertex.sids
+                        FILTER HAS(sid, 'srv6_endpoint_behavior')
+                        FILTER HAS(sid.srv6_endpoint_behavior, 'algo')
+                        FILTER sid.srv6_endpoint_behavior.algo == @algo
+                        RETURN sid
+                ) > 0
+                RETURN DISTINCT vertex_id
+        """
+        
+        vertex_cursor = db.aql.execute(vertex_query, bind_vars={'algo': algo})
+        vertices_with_algo = set([vid for vid in vertex_cursor])
+        
+        print(f"Found {len(vertices_with_algo)} vertices with algo {algo}")
+        
+        # Now get edges where BOTH endpoints participate in this algo
+        edge_query = f"""
+        FOR edge IN {collection_name}
+            FILTER CONTAINS(edge._from, 'node') AND CONTAINS(edge._to, 'node')
+            RETURN edge
+        """
+        
+        edge_cursor = db.aql.execute(edge_query)
+        
+        # Filter edges where both endpoints have the algo
+        edges = []
+        filtered_vertex_ids = set()
+        
+        for edge in edge_cursor:
+            if '_from' in edge and '_to' in edge:
+                # Only include edge if both vertices support this algo
+                if edge['_from'] in vertices_with_algo and edge['_to'] in vertices_with_algo:
+                    if include_all_fields:
+                        edges.append(edge)
+                    else:
+                        edges.append({
+                            '_from': edge['_from'],
+                            '_to': edge['_to']
+                        })
+                    filtered_vertex_ids.add(edge['_from'])
+                    filtered_vertex_ids.add(edge['_to'])
+        
+        # Get vertex details for vertices that are actually used in edges
+        vertices = {}
+        for vertex_id in filtered_vertex_ids:
+            vertex_collection, key = vertex_id.split('/')
+            
+            try:
+                vertex = db.collection(vertex_collection).get(key)
+                if vertex:
+                    if include_all_fields:
+                        # Include all vertex fields
+                        vertices[vertex_id] = vertex
+                    else:
+                        # Filter SIDs to only include those matching the algo
+                        algo_sids = []
+                        if 'sids' in vertex and vertex['sids']:
+                            for sid in vertex['sids']:
+                                if ('srv6_endpoint_behavior' in sid and 
+                                    'algo' in sid['srv6_endpoint_behavior'] and
+                                    sid['srv6_endpoint_behavior']['algo'] == algo):
+                                    algo_sids.append({
+                                        'srv6_sid': sid.get('srv6_sid'),
+                                        'algo': sid['srv6_endpoint_behavior'].get('algo'),
+                                        'endpoint_behavior': sid['srv6_endpoint_behavior'].get('endpoint_behavior')
+                                    })
+                        
+                        vertex_detail = {
+                            'collection': vertex_collection,
+                            'name': vertex.get('name'),
+                            'router_id': vertex.get('router_id'),
+                            'sids': algo_sids if algo_sids else None,
+                            'asn': vertex.get('asn')
+                        }
+                        # Remove None values
+                        vertices[vertex_id] = {k: v for k, v in vertex_detail.items() if v is not None}
+            except Exception as vertex_error:
+                print(f"Error getting vertex {vertex_id}: {str(vertex_error)}")
+                continue
+        
+        return {
+            'graph_collection': collection_name,
+            'algo': algo,
+            'edges': edges,
+            'vertices': vertices,
+            'total_edges': len(edges),
+            'total_vertices': len(vertices),
+            'include_all_fields': include_all_fields
+        }
+
+    except Exception as e:
+        print(f"Error in get_node_topology_by_algo: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=str(e)
+        )
+
 ##############################
 # Shortest Path and Traversals
 ##############################
@@ -786,10 +1024,21 @@ async def get_shortest_path(
     collection_name: str,
     source: str,
     destination: str,
-    direction: str = "outbound"  # or "inbound", "any"
+    direction: str = "outbound",  # or "inbound", "any"
+    algo: int = 0  # Flex-Algo to use for SRv6 SID selection
 ):
     """
-    Find shortest path between two nodes in a graph with detailed vertex and edge information
+    Find shortest path between two nodes in a graph with detailed vertex and edge information.
+    
+    Args:
+        collection_name: The graph collection to search
+        source: Source node ID
+        destination: Destination node ID
+        direction: Path direction (outbound, inbound, or any)
+        algo: Flex-Algo ID for SRv6 SID selection (default: 0)
+    
+    The algo parameter filters which SRv6 SIDs are used in the srv6_data response.
+    Only SIDs matching the specified algo will be included in the SRv6 USID calculation.
     """
     try:
         db = get_db()
@@ -806,166 +1055,133 @@ async def get_shortest_path(
                 detail="Direction must be 'outbound', 'inbound', or 'any'"
             )
         
-        # AQL query for shortest path with detailed information
-        aql = f"""
-        WITH igp_node
-        LET path = (
-            FOR v, e IN {direction.upper()}
-                SHORTEST_PATH @source TO @destination
+        # Build AQL query with optional algo filtering for igp_nodes
+        # For algo 0 or when algo filtering is not needed, use standard shortest path
+        # For non-zero algo, filter igp_nodes to only include those participating in that algo
+        if algo == 0:
+            # Standard shortest path without algo filtering
+            aql = f"""
+            WITH igp_node
+            LET path = (
+                FOR v, e IN {direction.upper()}
+                    SHORTEST_PATH @source TO @destination
+                    @graph_name
+                    RETURN {{
+                        vertex: {{
+                            _id: v._id,
+                            _key: v._key,
+                            router_id: v.router_id,
+                            prefix: v.prefix,
+                            name: v.name,
+                            sids: v.sids
+                        }},
+                        edge: e ? {{
+                            _id: e._id,
+                            _key: e._key,
+                            _from: e._from,
+                            _to: e._to,
+                            latency: e.latency,
+                            percent_util_out: e.percent_util_out,
+                            load: e.load
+                        }} : null
+                    }}
+            )
+            RETURN {{
+                path: path,
+                hopcount: LENGTH(path) - 1,
+                vertex_count: LENGTH(path),
+                source_info: FIRST(path).vertex,
+                destination_info: LAST(path).vertex
+            }}
+            """
+        else:
+            # Algo-aware shortest path - use K_SHORTEST_PATHS to find multiple paths
+            # and filter to get the first one where all igp_nodes support the algo
+            aql = f"""
+            WITH igp_node
+            FOR path IN {direction.upper()}
+                K_SHORTEST_PATHS @source TO @destination
                 @graph_name
+                // Check if all igp_nodes in this path support the requested algo
+                LET igp_nodes_in_path = (
+                    FOR v IN path.vertices
+                        FILTER CONTAINS(v._id, 'igp_node')
+                        RETURN v
+                )
+                LET nodes_with_algo = (
+                    FOR node IN igp_nodes_in_path
+                        FILTER HAS(node, 'sids') AND node.sids != null
+                        FILTER LENGTH(
+                            FOR sid IN node.sids
+                                FILTER HAS(sid, 'srv6_endpoint_behavior')
+                                FILTER HAS(sid.srv6_endpoint_behavior, 'algo')
+                                FILTER sid.srv6_endpoint_behavior.algo == @algo
+                                RETURN sid
+                        ) > 0
+                        RETURN node
+                )
+                // Only accept paths where all igp_nodes support the algo
+                FILTER LENGTH(igp_nodes_in_path) == LENGTH(nodes_with_algo)
+                LIMIT 1
+                
+                LET formatted_path = (
+                    FOR i IN 0..LENGTH(path.vertices)-1
+                        RETURN {{
+                            vertex: {{
+                                _id: path.vertices[i]._id,
+                                _key: path.vertices[i]._key,
+                                router_id: path.vertices[i].router_id,
+                                prefix: path.vertices[i].prefix,
+                                name: path.vertices[i].name,
+                                sids: path.vertices[i].sids
+                            }},
+                            edge: i < LENGTH(path.edges) ? {{
+                                _id: path.edges[i]._id,
+                                _key: path.edges[i]._key,
+                                _from: path.edges[i]._from,
+                                _to: path.edges[i]._to,
+                                latency: path.edges[i].latency,
+                                percent_util_out: path.edges[i].percent_util_out,
+                                load: path.edges[i].load
+                            }} : null
+                        }}
+                )
+                
                 RETURN {{
-                    vertex: {{
-                        _id: v._id,
-                        _key: v._key,
-                        router_id: v.router_id,
-                        prefix: v.prefix,
-                        name: v.name,
-                        sids: v.sids
+                    path: formatted_path,
+                    hopcount: LENGTH(path.vertices) - 1,
+                    vertex_count: LENGTH(path.vertices),
+                    source_info: {{
+                        _id: path.vertices[0]._id,
+                        _key: path.vertices[0]._key,
+                        router_id: path.vertices[0].router_id,
+                        prefix: path.vertices[0].prefix,
+                        name: path.vertices[0].name,
+                        sids: path.vertices[0].sids
                     }},
-                    edge: e ? {{
-                        _id: e._id,
-                        _key: e._key,
-                        _from: e._from,
-                        _to: e._to,
-                        latency: e.latency,
-                        percent_util_out: e.percent_util_out,
-                        load: e.load
-                    }} : null
+                    destination_info: {{
+                        _id: LAST(path.vertices)._id,
+                        _key: LAST(path.vertices)._key,
+                        router_id: LAST(path.vertices).router_id,
+                        prefix: LAST(path.vertices).prefix,
+                        name: LAST(path.vertices).name,
+                        sids: LAST(path.vertices).sids
+                    }}
                 }}
-        )
-        RETURN {{
-            path: path,
-            hopcount: LENGTH(path) - 1,
-            vertex_count: LENGTH(path),
-            source_info: FIRST(path).vertex,
-            destination_info: LAST(path).vertex
-        }}
-        """
+            """
         
-        cursor = db.aql.execute(
-            aql,
-            bind_vars={
-                'source': source,
-                'destination': destination,
-                'graph_name': collection_name
-            }
-        )
-        
-        results = [doc for doc in cursor]
-        
-        if not results or not results[0]['path']:
-            return {
-                "found": False,
-                "message": "No path found between specified nodes"
-            }
-        
-        # Get the existing response
-        response = {
-            "found": True,
-            "path": results[0]['path'],
-            "hopcount": results[0]['hopcount'],
-            "vertex_count": results[0]['vertex_count'],
-            "source_info": results[0]['source_info'],
-            "destination_info": results[0]['destination_info'],
-            "direction": direction
+        # Prepare bind variables
+        bind_vars = {
+            'source': source,
+            'destination': destination,
+            'graph_name': collection_name
         }
         
-        # Process and append the SRv6 data
-        srv6_data = process_path_data(results[0]['path'], source, destination)
-        response["srv6_data"] = srv6_data
+        # Add algo to bind vars if filtering is enabled
+        if algo != 0:
+            bind_vars['algo'] = algo
         
-        return response
-        
-    except Exception as e:
-        print(f"Error finding shortest path: {str(e)}")
-        raise HTTPException(
-            status_code=500,
-            detail=str(e)
-        )
-
-# latency weighted shortest path
-@router.get("/graphs/{collection_name}/shortest_path/latency")
-async def get_shortest_path_latency(
-    collection_name: str,
-    source: str,
-    destination: str,
-    direction: str = "outbound"  # or "inbound", "any"
-):
-    """
-    Find shortest path between two nodes using latency as weight
-    """
-    try:
-        db = get_db()
-        if not db.has_collection(collection_name):
-            raise HTTPException(
-                status_code=404,
-                detail=f"Collection {collection_name} not found"
-            )
-        
-        # Validate direction parameter
-        if direction.lower() not in ["outbound", "inbound", "any"]:
-            raise HTTPException(
-                status_code=400,
-                detail="Direction must be 'outbound', 'inbound', or 'any'"
-            )
-        
-        # AQL query for shortest path with latency weight and detailed information
-        aql = f"""
-        WITH igp_node
-        LET path = (
-            FOR v, e IN {direction.upper()}
-                SHORTEST_PATH @source TO @destination
-                @graph_name
-                OPTIONS {{
-                    weightAttribute: 'latency',
-                    defaultWeight: 1
-                }}
-                RETURN {{
-                    vertex: {{
-                        _id: v._id,
-                        _key: v._key,
-                        router_id: v.router_id,
-                        prefix: v.prefix,
-                        name: v.name,
-                        sids: v.sids
-                    }},
-                    edge: e ? {{
-                        _id: e._id,
-                        _key: e._key,
-                        _from: e._from,
-                        _to: e._to,
-                        latency: e.latency,
-                        percent_util_out: e.percent_util_out,
-                        load: e.load
-                    }} : null
-                }}
-        )
-        
-        LET total_latency = (
-            FOR p IN path
-                FILTER p.edge != null
-                COLLECT AGGREGATE total = SUM(p.edge.latency)
-                RETURN total
-        )
-        
-        RETURN {{
-            path: path,
-            hopcount: LENGTH(path) - 1,
-            vertex_count: LENGTH(path),
-            source_info: FIRST(path).vertex,
-            destination_info: LAST(path).vertex,
-            total_latency: FIRST(total_latency)
-        }}
-        """
-        
-        cursor = db.aql.execute(
-            aql,
-            bind_vars={
-                'source': source,
-                'destination': destination,
-                'graph_name': collection_name
-            }
-        )
+        cursor = db.aql.execute(aql, bind_vars=bind_vars)
         
         results = [doc for doc in cursor]
         
@@ -984,11 +1200,226 @@ async def get_shortest_path_latency(
             "source_info": results[0]['source_info'],
             "destination_info": results[0]['destination_info'],
             "direction": direction,
-            "total_latency": results[0]['total_latency']
+            "algo": algo
         }
         
-        # Process and append the SRv6 data
-        srv6_data = process_path_data(results[0]['path'], source, destination)
+        # Process and append the SRv6 data with algo filtering
+        srv6_data = process_path_data(results[0]['path'], source, destination, algo=algo)
+        response["srv6_data"] = srv6_data
+        
+        return response
+        
+    except Exception as e:
+        print(f"Error finding shortest path: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=str(e)
+        )
+
+# latency weighted shortest path
+@router.get("/graphs/{collection_name}/shortest_path/latency")
+async def get_shortest_path_latency(
+    collection_name: str,
+    source: str,
+    destination: str,
+    direction: str = "outbound",  # or "inbound", "any"
+    algo: int = 0  # Flex-Algo to use for SRv6 SID selection
+):
+    """
+    Find shortest path between two nodes using latency as weight.
+    
+    Args:
+        collection_name: The graph collection to search
+        source: Source node ID
+        destination: Destination node ID
+        direction: Path direction (outbound, inbound, or any)
+        algo: Flex-Algo ID for path computation and SRv6 SID selection (default: 0)
+    """
+    try:
+        db = get_db()
+        if not db.has_collection(collection_name):
+            raise HTTPException(
+                status_code=404,
+                detail=f"Collection {collection_name} not found"
+            )
+        
+        # Validate direction parameter
+        if direction.lower() not in ["outbound", "inbound", "any"]:
+            raise HTTPException(
+                status_code=400,
+                detail="Direction must be 'outbound', 'inbound', or 'any'"
+            )
+        
+        # Build AQL query with optional algo filtering
+        if algo == 0:
+            # Standard shortest path with latency weight
+            aql = f"""
+            WITH igp_node
+            LET path = (
+                FOR v, e IN {direction.upper()}
+                    SHORTEST_PATH @source TO @destination
+                    @graph_name
+                    OPTIONS {{
+                        weightAttribute: 'latency',
+                        defaultWeight: 1
+                    }}
+                    RETURN {{
+                        vertex: {{
+                            _id: v._id,
+                            _key: v._key,
+                            router_id: v.router_id,
+                            prefix: v.prefix,
+                            name: v.name,
+                            sids: v.sids
+                        }},
+                        edge: e ? {{
+                            _id: e._id,
+                            _key: e._key,
+                            _from: e._from,
+                            _to: e._to,
+                            latency: e.latency,
+                            percent_util_out: e.percent_util_out,
+                            load: e.load
+                        }} : null
+                    }}
+            )
+            
+            LET total_latency = (
+                FOR p IN path
+                    FILTER p.edge != null
+                    COLLECT AGGREGATE total = SUM(p.edge.latency)
+                    RETURN total
+            )
+            
+            RETURN {{
+                path: path,
+                hopcount: LENGTH(path) - 1,
+                vertex_count: LENGTH(path),
+                source_info: FIRST(path).vertex,
+                destination_info: LAST(path).vertex,
+                total_latency: FIRST(total_latency)
+            }}
+            """
+        else:
+            # Algo-aware shortest path with latency weight
+            aql = f"""
+            WITH igp_node
+            FOR path IN {direction.upper()}
+                K_SHORTEST_PATHS @source TO @destination
+                @graph_name
+                OPTIONS {{
+                    weightAttribute: 'latency',
+                    defaultWeight: 1
+                }}
+                LET igp_nodes_in_path = (
+                    FOR v IN path.vertices
+                        FILTER CONTAINS(v._id, 'igp_node')
+                        RETURN v
+                )
+                LET nodes_with_algo = (
+                    FOR node IN igp_nodes_in_path
+                        FILTER HAS(node, 'sids') AND node.sids != null
+                        FILTER LENGTH(
+                            FOR sid IN node.sids
+                                FILTER HAS(sid, 'srv6_endpoint_behavior')
+                                FILTER HAS(sid.srv6_endpoint_behavior, 'algo')
+                                FILTER sid.srv6_endpoint_behavior.algo == @algo
+                                RETURN sid
+                        ) > 0
+                        RETURN node
+                )
+                FILTER LENGTH(igp_nodes_in_path) == LENGTH(nodes_with_algo)
+                LIMIT 1
+                
+                LET formatted_path = (
+                    FOR i IN 0..LENGTH(path.vertices)-1
+                        RETURN {{
+                            vertex: {{
+                                _id: path.vertices[i]._id,
+                                _key: path.vertices[i]._key,
+                                router_id: path.vertices[i].router_id,
+                                prefix: path.vertices[i].prefix,
+                                name: path.vertices[i].name,
+                                sids: path.vertices[i].sids
+                            }},
+                            edge: i < LENGTH(path.edges) ? {{
+                                _id: path.edges[i]._id,
+                                _key: path.edges[i]._key,
+                                _from: path.edges[i]._from,
+                                _to: path.edges[i]._to,
+                                latency: path.edges[i].latency,
+                                percent_util_out: path.edges[i].percent_util_out,
+                                load: path.edges[i].load
+                            }} : null
+                        }}
+                )
+                
+                LET total_latency = (
+                    FOR i IN 0..LENGTH(path.edges)-1
+                        FILTER path.edges[i].latency != null
+                        COLLECT AGGREGATE total = SUM(path.edges[i].latency)
+                        RETURN total
+                )
+                
+                RETURN {{
+                    path: formatted_path,
+                    hopcount: LENGTH(path.vertices) - 1,
+                    vertex_count: LENGTH(path.vertices),
+                    source_info: {{
+                        _id: path.vertices[0]._id,
+                        _key: path.vertices[0]._key,
+                        router_id: path.vertices[0].router_id,
+                        prefix: path.vertices[0].prefix,
+                        name: path.vertices[0].name,
+                        sids: path.vertices[0].sids
+                    }},
+                    destination_info: {{
+                        _id: LAST(path.vertices)._id,
+                        _key: LAST(path.vertices)._key,
+                        router_id: LAST(path.vertices).router_id,
+                        prefix: LAST(path.vertices).prefix,
+                        name: LAST(path.vertices).name,
+                        sids: LAST(path.vertices).sids
+                    }},
+                    total_latency: FIRST(total_latency)
+                }}
+            """
+        
+        # Prepare bind variables
+        bind_vars = {
+            'source': source,
+            'destination': destination,
+            'graph_name': collection_name
+        }
+        
+        if algo != 0:
+            bind_vars['algo'] = algo
+        
+        cursor = db.aql.execute(aql, bind_vars=bind_vars)
+        
+        results = [doc for doc in cursor]
+        
+        if not results or not results[0]['path']:
+            return {
+                "found": False,
+                "message": "No path found between specified nodes"
+            }
+        
+        # Get the existing response
+        response = {
+            "found": True,
+            "path": results[0]['path'],
+            "hopcount": results[0]['hopcount'],
+            "vertex_count": results[0]['vertex_count'],
+            "source_info": results[0]['source_info'],
+            "destination_info": results[0]['destination_info'],
+            "direction": direction,
+            "total_latency": results[0]['total_latency'],
+            "algo": algo
+        }
+        
+        # Process and append the SRv6 data with algo filtering
+        srv6_data = process_path_data(results[0]['path'], source, destination, algo=algo)
         response["srv6_data"] = srv6_data
         
         return response
@@ -1006,10 +1437,14 @@ async def get_shortest_path_utilization(
     collection_name: str,
     source: str,
     destination: str,
-    direction: str = "outbound"  # or "inbound", "any"
+    direction: str = "outbound",  # or "inbound", "any"
+    algo: int = 0  # Flex-Algo to use for SRv6 SID selection
 ):
     """
-    Find shortest path between two nodes using utilization as weight
+    Find shortest path between two nodes using utilization as weight.
+    
+    Args:
+        algo: Flex-Algo ID for path computation and SRv6 SID selection (default: 0)
     """
     try:
         db = get_db()
@@ -1026,64 +1461,153 @@ async def get_shortest_path_utilization(
                 detail="Direction must be 'outbound', 'inbound', or 'any'"
             )
         
-        # AQL query for shortest path with detailed information
-        aql = f"""
-        WITH igp_node
-        LET path = (
-            FOR v, e IN {direction.upper()}
-                SHORTEST_PATH @source TO @destination
+        # Build AQL query with optional algo filtering
+        if algo == 0:
+            # Standard shortest path with utilization weight
+            aql = f"""
+            WITH igp_node
+            LET path = (
+                FOR v, e IN {direction.upper()}
+                    SHORTEST_PATH @source TO @destination
+                    @graph_name
+                    OPTIONS {{
+                        weightAttribute: 'percent_util_out',
+                        defaultWeight: 1
+                    }}
+                    RETURN {{
+                        vertex: {{
+                            _id: v._id,
+                            _key: v._key,
+                            router_id: v.router_id,
+                            prefix: v.prefix,
+                            name: v.name,
+                            sids: v.sids
+                        }},
+                        edge: e ? {{
+                            _id: e._id,
+                            _key: e._key,
+                            _from: e._from,
+                            _to: e._to,
+                            latency: e.latency,
+                            percent_util_out: e.percent_util_out,
+                            load: e.load
+                        }} : null
+                    }}
+            )
+            
+            LET avg_utilization = (
+                FOR p IN path
+                    FILTER p.edge != null
+                    COLLECT AGGREGATE 
+                        avg = AVERAGE(p.edge.percent_util_out)
+                    RETURN avg
+            )
+            
+            RETURN {{
+                path: path,
+                hopcount: LENGTH(path) - 1,
+                vertex_count: LENGTH(path),
+                source_info: FIRST(path).vertex,
+                destination_info: LAST(path).vertex,
+                average_utilization: FIRST(avg_utilization)
+            }}
+            """
+        else:
+            # Algo-aware shortest path with utilization weight
+            aql = f"""
+            WITH igp_node
+            FOR path IN {direction.upper()}
+                K_SHORTEST_PATHS @source TO @destination
                 @graph_name
                 OPTIONS {{
                     weightAttribute: 'percent_util_out',
                     defaultWeight: 1
                 }}
+                LET igp_nodes_in_path = (
+                    FOR v IN path.vertices
+                        FILTER CONTAINS(v._id, 'igp_node')
+                        RETURN v
+                )
+                LET nodes_with_algo = (
+                    FOR node IN igp_nodes_in_path
+                        FILTER HAS(node, 'sids') AND node.sids != null
+                        FILTER LENGTH(
+                            FOR sid IN node.sids
+                                FILTER HAS(sid, 'srv6_endpoint_behavior')
+                                FILTER HAS(sid.srv6_endpoint_behavior, 'algo')
+                                FILTER sid.srv6_endpoint_behavior.algo == @algo
+                                RETURN sid
+                        ) > 0
+                        RETURN node
+                )
+                FILTER LENGTH(igp_nodes_in_path) == LENGTH(nodes_with_algo)
+                LIMIT 1
+                
+                LET formatted_path = (
+                    FOR i IN 0..LENGTH(path.vertices)-1
+                        RETURN {{
+                            vertex: {{
+                                _id: path.vertices[i]._id,
+                                _key: path.vertices[i]._key,
+                                router_id: path.vertices[i].router_id,
+                                prefix: path.vertices[i].prefix,
+                                name: path.vertices[i].name,
+                                sids: path.vertices[i].sids
+                            }},
+                            edge: i < LENGTH(path.edges) ? {{
+                                _id: path.edges[i]._id,
+                                _key: path.edges[i]._key,
+                                _from: path.edges[i]._from,
+                                _to: path.edges[i]._to,
+                                latency: path.edges[i].latency,
+                                percent_util_out: path.edges[i].percent_util_out,
+                                load: path.edges[i].load
+                            }} : null
+                        }}
+                )
+                
+                LET avg_utilization = (
+                    FOR i IN 0..LENGTH(path.edges)-1
+                        FILTER path.edges[i].percent_util_out != null
+                        COLLECT AGGREGATE avg = AVERAGE(path.edges[i].percent_util_out)
+                        RETURN avg
+                )
+                
                 RETURN {{
-                    vertex: {{
-                        _id: v._id,
-                        _key: v._key,
-                        router_id: v.router_id,
-                        prefix: v.prefix,
-                        name: v.name,
-                        sids: v.sids
+                    path: formatted_path,
+                    hopcount: LENGTH(path.vertices) - 1,
+                    vertex_count: LENGTH(path.vertices),
+                    source_info: {{
+                        _id: path.vertices[0]._id,
+                        _key: path.vertices[0]._key,
+                        router_id: path.vertices[0].router_id,
+                        prefix: path.vertices[0].prefix,
+                        name: path.vertices[0].name,
+                        sids: path.vertices[0].sids
                     }},
-                    edge: e ? {{
-                        _id: e._id,
-                        _key: e._key,
-                        _from: e._from,
-                        _to: e._to,
-                        latency: e.latency,
-                        percent_util_out: e.percent_util_out,
-                        load: e.load
-                    }} : null
+                    destination_info: {{
+                        _id: LAST(path.vertices)._id,
+                        _key: LAST(path.vertices)._key,
+                        router_id: LAST(path.vertices).router_id,
+                        prefix: LAST(path.vertices).prefix,
+                        name: LAST(path.vertices).name,
+                        sids: LAST(path.vertices).sids
+                    }},
+                    average_utilization: FIRST(avg_utilization)
                 }}
-        )
+            """
         
-        LET avg_utilization = (
-            FOR p IN path
-                FILTER p.edge != null
-                COLLECT AGGREGATE 
-                    avg = AVERAGE(p.edge.percent_util_out)
-                RETURN avg
-        )
+        # Prepare bind variables
+        bind_vars = {
+            'source': source,
+            'destination': destination,
+            'graph_name': collection_name
+        }
         
-        RETURN {{
-            path: path,
-            hopcount: LENGTH(path) - 1,
-            vertex_count: LENGTH(path),
-            source_info: FIRST(path).vertex,
-            destination_info: LAST(path).vertex,
-            average_utilization: FIRST(avg_utilization)
-        }}
-        """
+        if algo != 0:
+            bind_vars['algo'] = algo
         
-        cursor = db.aql.execute(
-            aql,
-            bind_vars={
-                'source': source,
-                'destination': destination,
-                'graph_name': collection_name
-            }
-        )
+        cursor = db.aql.execute(aql, bind_vars=bind_vars)
         
         results = [doc for doc in cursor]
         
@@ -1105,9 +1629,10 @@ async def get_shortest_path_utilization(
             "average_utilization": results[0]['average_utilization']
         }
         
-        # Process and append the SRv6 data
-        srv6_data = process_path_data(results[0]['path'], source, destination)
+        # Process and append the SRv6 data with algo filtering
+        srv6_data = process_path_data(results[0]['path'], source, destination, algo=algo)
         response["srv6_data"] = srv6_data
+        response["algo"] = algo
         
         return response
         
@@ -1124,10 +1649,14 @@ async def get_shortest_path_sovereignty(
     source: str,
     destination: str,
     excluded_countries: str,
-    direction: str = "outbound"
+    direction: str = "outbound",
+    algo: int = 0  # Flex-Algo to use for SRv6 SID selection
 ):
     """
     Find shortest path between two nodes while avoiding specified countries.
+    
+    Args:
+        algo: Flex-Algo ID for path computation and SRv6 SID selection (default: 0)
     """
     try:
         db = get_db()
@@ -1141,6 +1670,31 @@ async def get_shortest_path_sovereignty(
         countries = [c.strip().upper() for c in excluded_countries.split(',')]
         country_filters = ' AND '.join([f'p.edges[*].country_codes !like "%{country}%"' for country in countries])
         
+        # Build algo filtering if needed
+        if algo == 0:
+            algo_filter = ""
+        else:
+            algo_filter = f"""
+            LET igp_nodes_in_path = (
+                FOR v IN p.vertices
+                    FILTER CONTAINS(v._id, 'igp_node')
+                    RETURN v
+            )
+            LET nodes_with_algo = (
+                FOR node IN igp_nodes_in_path
+                    FILTER HAS(node, 'sids') AND node.sids != null
+                    FILTER LENGTH(
+                        FOR sid IN node.sids
+                            FILTER HAS(sid, 'srv6_endpoint_behavior')
+                            FILTER HAS(sid.srv6_endpoint_behavior, 'algo')
+                            FILTER sid.srv6_endpoint_behavior.algo == {algo}
+                            RETURN sid
+                    ) > 0
+                    RETURN node
+            )
+            FILTER LENGTH(igp_nodes_in_path) == LENGTH(nodes_with_algo)
+            """
+        
         # AQL query matching the working manual query but with additional path details
         aql = f"""
         FOR p IN {direction.upper()} k_shortest_paths
@@ -1148,6 +1702,7 @@ async def get_shortest_path_sovereignty(
             {collection_name}
             OPTIONS {{uniqueVertices: "path", bfs: true}}
             FILTER {country_filters}
+            {algo_filter}
             LIMIT 1
             RETURN {{
                 path: (
@@ -1188,11 +1743,12 @@ async def get_shortest_path_sovereignty(
             "destination_info": results[0]['destination_info'],
             "direction": direction,
             "countries_traversed": results[0]['countries_traversed'],
-            "excluded_countries": countries
+            "excluded_countries": countries,
+            "algo": algo
         }
         
-        # Process and append the SRv6 data
-        srv6_data = process_path_data(results[0]['path'], source, destination)
+        # Process and append the SRv6 data with algo filtering
+        srv6_data = process_path_data(results[0]['path'], source, destination, algo=algo)
         response["srv6_data"] = srv6_data
         
         return response
@@ -1210,10 +1766,14 @@ async def get_shortest_path_load(
     collection_name: str,
     source: str,
     destination: str,
-    direction: str = "outbound"  # or "inbound", "any"
+    direction: str = "outbound",  # or "inbound", "any"
+    algo: int = 0  # Flex-Algo to use for SRv6 SID selection
 ):
     """
-    Find shortest path between two nodes using load as weight
+    Find shortest path between two nodes using load as weight.
+    
+    Args:
+        algo: Flex-Algo ID for path computation and SRv6 SID selection (default: 0)
     """
     try:
         db = get_db()
@@ -1230,67 +1790,165 @@ async def get_shortest_path_load(
                 detail="Direction must be 'outbound', 'inbound', or 'any'"
             )
         
-        # AQL query for shortest path with detailed information
-        aql = f"""
-        WITH igp_node
-        LET path = (
-            FOR v, e IN {direction.upper()}
-                SHORTEST_PATH @source TO @destination
+        # Build AQL query with optional algo filtering
+        if algo == 0:
+            # Standard shortest path with load weight
+            aql = f"""
+            WITH igp_node
+            LET path = (
+                FOR v, e IN {direction.upper()}
+                    SHORTEST_PATH @source TO @destination
+                    @graph_name
+                    OPTIONS {{
+                        weightAttribute: 'load',
+                        defaultWeight: 1
+                    }}
+                    RETURN {{
+                        vertex: {{
+                            _id: v._id,
+                            _key: v._key,
+                            router_id: v.router_id,
+                            ipv4_address: v.ipv4_address,
+                            ipv6_address: v.ipv6_address,
+                            prefix: v.prefix,
+                            prefix_len: v.prefix_len,
+                            name: v.name,
+                            sids: v.sids
+                        }},
+                        edge: e ? {{
+                            _id: e._id,
+                            _key: e._key,
+                            _from: e._from,
+                            _to: e._to,
+                            latency: e.latency,
+                            percent_util_out: e.percent_util_out,
+                            load: e.load
+                        }} : null
+                    }}
+            )
+            
+            LET avg_load = (
+                FOR p IN path
+                    FILTER p.edge != null
+                    COLLECT AGGREGATE 
+                        avg = AVERAGE(p.edge.load)
+                    RETURN avg
+            )
+            
+            RETURN {{
+                path: path,
+                hopcount: LENGTH(path) - 1,
+                vertex_count: LENGTH(path),
+                source_info: FIRST(path).vertex,
+                destination_info: LAST(path).vertex,
+                average_load: FIRST(avg_load)
+            }}
+            """
+        else:
+            # Algo-aware shortest path with load weight
+            aql = f"""
+            WITH igp_node
+            FOR path IN {direction.upper()}
+                K_SHORTEST_PATHS @source TO @destination
                 @graph_name
                 OPTIONS {{
                     weightAttribute: 'load',
                     defaultWeight: 1
                 }}
+                LET igp_nodes_in_path = (
+                    FOR v IN path.vertices
+                        FILTER CONTAINS(v._id, 'igp_node')
+                        RETURN v
+                )
+                LET nodes_with_algo = (
+                    FOR node IN igp_nodes_in_path
+                        FILTER HAS(node, 'sids') AND node.sids != null
+                        FILTER LENGTH(
+                            FOR sid IN node.sids
+                                FILTER HAS(sid, 'srv6_endpoint_behavior')
+                                FILTER HAS(sid.srv6_endpoint_behavior, 'algo')
+                                FILTER sid.srv6_endpoint_behavior.algo == @algo
+                                RETURN sid
+                        ) > 0
+                        RETURN node
+                )
+                FILTER LENGTH(igp_nodes_in_path) == LENGTH(nodes_with_algo)
+                LIMIT 1
+                
+                LET formatted_path = (
+                    FOR i IN 0..LENGTH(path.vertices)-1
+                        RETURN {{
+                            vertex: {{
+                                _id: path.vertices[i]._id,
+                                _key: path.vertices[i]._key,
+                                router_id: path.vertices[i].router_id,
+                                ipv4_address: path.vertices[i].ipv4_address,
+                                ipv6_address: path.vertices[i].ipv6_address,
+                                prefix: path.vertices[i].prefix,
+                                prefix_len: path.vertices[i].prefix_len,
+                                name: path.vertices[i].name,
+                                sids: path.vertices[i].sids
+                            }},
+                            edge: i < LENGTH(path.edges) ? {{
+                                _id: path.edges[i]._id,
+                                _key: path.edges[i]._key,
+                                _from: path.edges[i]._from,
+                                _to: path.edges[i]._to,
+                                latency: path.edges[i].latency,
+                                percent_util_out: path.edges[i].percent_util_out,
+                                load: path.edges[i].load
+                            }} : null
+                        }}
+                )
+                
+                LET avg_load = (
+                    FOR i IN 0..LENGTH(path.edges)-1
+                        FILTER path.edges[i].load != null
+                        COLLECT AGGREGATE avg = AVERAGE(path.edges[i].load)
+                        RETURN avg
+                )
+                
                 RETURN {{
-                    vertex: {{
-                        _id: v._id,
-                        _key: v._key,
-                        router_id: v.router_id,
-                        ipv4_address: v.ipv4_address,
-                        ipv6_address: v.ipv6_address,
-                        prefix: v.prefix,
-                        prefix_len: v.prefix_len,
-                        name: v.name,
-                        sids: v.sids
+                    path: formatted_path,
+                    hopcount: LENGTH(path.vertices) - 1,
+                    vertex_count: LENGTH(path.vertices),
+                    source_info: {{
+                        _id: path.vertices[0]._id,
+                        _key: path.vertices[0]._key,
+                        router_id: path.vertices[0].router_id,
+                        ipv4_address: path.vertices[0].ipv4_address,
+                        ipv6_address: path.vertices[0].ipv6_address,
+                        prefix: path.vertices[0].prefix,
+                        prefix_len: path.vertices[0].prefix_len,
+                        name: path.vertices[0].name,
+                        sids: path.vertices[0].sids
                     }},
-                    edge: e ? {{
-                        _id: e._id,
-                        _key: e._key,
-                        _from: e._from,
-                        _to: e._to,
-                        latency: e.latency,
-                        percent_util_out: e.percent_util_out,
-                        load: e.load
-                    }} : null
+                    destination_info: {{
+                        _id: LAST(path.vertices)._id,
+                        _key: LAST(path.vertices)._key,
+                        router_id: LAST(path.vertices).router_id,
+                        ipv4_address: LAST(path.vertices).ipv4_address,
+                        ipv6_address: LAST(path.vertices).ipv6_address,
+                        prefix: LAST(path.vertices).prefix,
+                        prefix_len: LAST(path.vertices).prefix_len,
+                        name: LAST(path.vertices).name,
+                        sids: LAST(path.vertices).sids
+                    }},
+                    average_load: FIRST(avg_load)
                 }}
-        )
+            """
         
-        LET avg_load = (
-            FOR p IN path
-                FILTER p.edge != null
-                COLLECT AGGREGATE 
-                    avg = AVERAGE(p.edge.load)
-                RETURN avg
-        )
+        # Prepare bind variables
+        bind_vars = {
+            'source': source,
+            'destination': destination,
+            'graph_name': collection_name
+        }
         
-        RETURN {{
-            path: path,
-            hopcount: LENGTH(path) - 1,
-            vertex_count: LENGTH(path),
-            source_info: FIRST(path).vertex,
-            destination_info: LAST(path).vertex,
-            average_load: FIRST(avg_load)
-        }}
-        """
+        if algo != 0:
+            bind_vars['algo'] = algo
         
-        cursor = db.aql.execute(
-            aql,
-            bind_vars={
-                'source': source,
-                'destination': destination,
-                'graph_name': collection_name
-            }
-        )
+        cursor = db.aql.execute(aql, bind_vars=bind_vars)
         
         results = [doc for doc in cursor]
         
@@ -1309,11 +1967,12 @@ async def get_shortest_path_load(
             "source_info": results[0]['source_info'],
             "destination_info": results[0]['destination_info'],
             "direction": direction,
-            "average_load": results[0]['average_load']
+            "average_load": results[0]['average_load'],
+            "algo": algo
         }
         
-        # Process and append the SRv6 data
-        srv6_data = process_path_data(results[0]['path'], source, destination)
+        # Process and append the SRv6 data with algo filtering
+        srv6_data = process_path_data(results[0]['path'], source, destination, algo=algo)
         response["srv6_data"] = srv6_data
         
         # Get database connection
@@ -1338,11 +1997,15 @@ async def get_best_paths(
     source: str,
     destination: str,
     limit: int = 4,
-    direction: str = "outbound"
+    direction: str = "outbound",
+    algo: int = 0  # Flex-Algo to use for SRv6 SID selection
 ):
     """
     Find multiple best paths between source and destination nodes.
     Default limit is 4 paths, but user can specify more or fewer.
+    
+    Args:
+        algo: Flex-Algo ID for path computation and SRv6 SID selection (default: 0)
     """
     try:
         db = get_db()
@@ -1352,12 +2015,38 @@ async def get_best_paths(
                 detail=f"Collection {collection_name} not found"
             )
         
+        # Build algo filtering if needed
+        if algo == 0:
+            algo_filter = ""
+        else:
+            algo_filter = f"""
+            LET igp_nodes_in_path = (
+                FOR v IN p.vertices
+                    FILTER CONTAINS(v._id, 'igp_node')
+                    RETURN v
+            )
+            LET nodes_with_algo = (
+                FOR node IN igp_nodes_in_path
+                    FILTER HAS(node, 'sids') AND node.sids != null
+                    FILTER LENGTH(
+                        FOR sid IN node.sids
+                            FILTER HAS(sid, 'srv6_endpoint_behavior')
+                            FILTER HAS(sid.srv6_endpoint_behavior, 'algo')
+                            FILTER sid.srv6_endpoint_behavior.algo == {algo}
+                            RETURN sid
+                    ) > 0
+                    RETURN node
+            )
+            FILTER LENGTH(igp_nodes_in_path) == LENGTH(nodes_with_algo)
+            """
+        
         # AQL query to get multiple paths
         aql = f"""
         FOR p IN {direction.upper()} k_shortest_paths
             '{source}' TO '{destination}'
             {collection_name}
             OPTIONS {{uniqueVertices: "path", bfs: true}}
+            {algo_filter}
             LIMIT {limit}
             RETURN {{
                 path: (
@@ -1400,8 +2089,8 @@ async def get_best_paths(
                 "countries_traversed": result['countries_traversed']
             }
             
-            # Process and append SRv6 data for each path
-            srv6_data = process_path_data(result['path'], source, destination)
+            # Process and append SRv6 data for each path with algo filtering
+            srv6_data = process_path_data(result['path'], source, destination, algo=algo)
             path_response["srv6_data"] = srv6_data
             paths.append(path_response)
         
@@ -1409,6 +2098,7 @@ async def get_best_paths(
             "found": True,
             "total_paths_found": len(paths),
             "direction": direction,
+            "algo": algo,
             "paths": paths
         }
         
@@ -1426,11 +2116,15 @@ async def get_next_best_paths(
     destination: str,
     same_hop_limit: int = 4,
     plus_one_limit: int = 8,
-    direction: str = "outbound"
+    direction: str = "outbound",
+    algo: int = 0  # Flex-Algo to use for SRv6 SID selection
 ):
     """
     Find the shortest path and alternative paths with similar hop counts.
     Allows customization of how many paths to return for each hop count.
+    
+    Args:
+        algo: Flex-Algo ID for path computation and SRv6 SID selection (default: 0)
     """
     try:
         db = get_db()
@@ -1551,19 +2245,20 @@ async def get_next_best_paths(
         plus_one_paths = [doc for doc in plus_one_cursor]
         print(f"Found {len(plus_one_paths)} paths with {base_hopcount + 1} hops")
         
-        # Process SRv6 data for all paths
-        shortest_srv6 = process_path_data(shortest_result['path'], source, destination)
+        # Process SRv6 data for all paths with algo filtering
+        shortest_srv6 = process_path_data(shortest_result['path'], source, destination, algo=algo)
         same_hop_srv6_data = [
-            process_path_data(path['path'], source, destination)
+            process_path_data(path['path'], source, destination, algo=algo)
             for path in same_hop_paths
         ]
         plus_one_srv6_data = [
-            process_path_data(path['path'], source, destination)
+            process_path_data(path['path'], source, destination, algo=algo)
             for path in plus_one_paths
         ]
         
         return {
             "found": True,
+            "algo": algo,
             "shortest_path": {
                 "path": shortest_result['path'],
                 "hopcount": shortest_result['hopcount'],

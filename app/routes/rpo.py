@@ -43,7 +43,7 @@ def get_db():
 @router.get("/rpo")
 async def get_rpo_info():
     """
-    Get information about Route Path Optimization (RPO) capabilities
+    Get information about Resource Path Optimization (RPO) capabilities
     """
     try:
         db = get_db()
@@ -63,7 +63,7 @@ async def get_rpo_info():
         
         return {
             'supported_metrics': SUPPORTED_METRICS,
-            'description': 'Route Path Optimization (RPO) API for intelligent destination selection',
+            'description': 'Resource Path Optimization (RPO) API for intelligent destination selection',
             'available_graph_collections': sorted(graph_collections),
             'note': 'Use graphs parameter to specify which topology graph to use for path finding'
         }
@@ -72,7 +72,7 @@ async def get_rpo_info():
         logger.warning(f"Could not fetch graph collections: {str(e)}")
         return {
             'supported_metrics': SUPPORTED_METRICS,
-            'description': 'Route Path Optimization (RPO) API for intelligent destination selection',
+            'description': 'Resource Path Optimization (RPO) API for intelligent destination selection',
             'available_graph_collections': [],
             'note': 'Use graphs parameter to specify which topology graph to use for path finding'
         }
@@ -136,7 +136,7 @@ async def select_optimal_endpoint(
     direction: str = Query("outbound", description="Direction for path finding")
 ):
     """
-    Select optimal destination endpoint from a collection based on metrics for Route Path Optimization
+    Select optimal destination endpoint from a collection based on metrics for Resource Path Optimization
     """
     try:
         db = get_db()
@@ -292,7 +292,7 @@ async def select_from_specific_endpoints(
     direction: str = Query("outbound", description="Direction for path finding")
 ):
     """
-    Select optimal destination from a specific list of endpoints for Route Path Optimization
+    Select optimal destination from a specific list of endpoints for Resource Path Optimization
     """
     try:
         db = get_db()
