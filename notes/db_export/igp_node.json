@@ -1,0 +1,3205 @@
+{
+  "collection": "igp_node",
+  "type": "collection",
+  "count": 17,
+  "data": [
+    {
+      "_key": "1_0_0_0000.0000.0029",
+      "_id": "igp_node/1_0_0_0000.0000.0029",
+      "_rev": "_kk95k_a---",
+      "area_id": "49.0101",
+      "asn": 100000,
+      "domain_id": 0,
+      "flex_algo_definition": null,
+      "igp_router_id": "0000.0000.0029",
+      "ls_sr_capabilities": {
+        "flags": {
+          "i_flag": true,
+          "v_flag": false
+        },
+        "sr_capability_subtlv": [
+          {
+            "range": 64000,
+            "sid": 100000
+          }
+        ]
+      },
+      "mt_id_tlv": [
+        {
+          "o_flag": false,
+          "a_flag": false,
+          "mt_id": 0
+        },
+        {
+          "o_flag": false,
+          "a_flag": false,
+          "mt_id": 2
+        }
+      ],
+      "name": "xrd29",
+      "node_msd": [
+        {
+          "msd_type": 1,
+          "msd_value": 10
+        }
+      ],
+      "peer_asn": 100000,
+      "peer_ip": "10.0.0.31",
+      "prefix_attr_tlvs": null,
+      "protocol": "IS-IS Level 1",
+      "protocol_id": 1,
+      "router_id": "10.0.0.29",
+      "sids": [
+        {
+          "srv6_sid": "fc00:0:29::",
+          "srv6_endpoint_behavior": {
+            "endpoint_behavior": 48,
+            "flag": 0,
+            "algo": 0
+          },
+          "srv6_sid_structure": {
+            "locator_block_length": 32,
+            "locator_node_length": 16,
+            "function_length": 0,
+            "argument_length": 80
+          }
+        }
+      ],
+      "sr_algorithm": [
+        0,
+        1
+      ],
+      "sr_local_block": {
+        "flags": 0,
+        "subranges": [
+          {
+            "range_size": 1000,
+            "label": 15000
+          }
+        ]
+      },
+      "srv6_capabilities_tlv": {
+        "o_flag": false
+      },
+      "is_prepolicy": false,
+      "is_adj_rib_in": false,
+      "prefixes": [
+        {
+          "_key": "1_0_0_0_0_10.0.0.29_32_0000.0000.0029",
+          "prefix": "10.0.0.29",
+          "prefix_attr_tlvs": {
+            "flags": {
+              "n_flag": true,
+              "r_flag": false,
+              "x_flag": false
+            },
+            "ls_prefix_sid": [
+              {
+                "algo": 0,
+                "flags": {
+                  "e_flag": false,
+                  "l_flag": false,
+                  "n_flag": true,
+                  "p_flag": false,
+                  "r_flag": false,
+                  "v_flag": false
+                },
+                "prefix_sid": 29
+              }
+            ],
+            "source_router_id": "10.0.0.29"
+          },
+          "prefix_len": 32,
+          "prefix_metric": null
+        },
+        {
+          "_key": "1_0_2_0_0_fc00:0:29::1_128_0000.0000.0029",
+          "prefix": "fc00:0:29::1",
+          "prefix_attr_tlvs": {
+            "flags": {
+              "n_flag": true,
+              "r_flag": false,
+              "x_flag": false
+            }
+          },
+          "prefix_len": 128,
+          "prefix_metric": null
+        }
+      ]
+    },
+    {
+      "_key": "1_0_0_0000.0000.0017",
+      "_id": "igp_node/1_0_0_0000.0000.0017",
+      "_rev": "_kk95k_u---",
+      "area_id": "49.0101",
+      "asn": 100000,
+      "domain_id": 0,
+      "flex_algo_definition": [
+        {
+          "flex_algo": 128,
+          "metric_type": 1,
+          "calculation_type": 0,
+          "priority": 128,
+          "sub_tlv": {
+            "include_any": [
+              2
+            ]
+          }
+        },
+        {
+          "flex_algo": 129,
+          "metric_type": 1,
+          "calculation_type": 0,
+          "priority": 128,
+          "sub_tlv": {
+            "include_any": [
+              4
+            ]
+          }
+        },
+        {
+          "flex_algo": 130,
+          "metric_type": 1,
+          "calculation_type": 0,
+          "priority": 128,
+          "sub_tlv": {
+            "include_any": [
+              8
+            ]
+          }
+        }
+      ],
+      "igp_router_id": "0000.0000.0017",
+      "ls_sr_capabilities": {
+        "flags": {
+          "i_flag": true,
+          "v_flag": false
+        },
+        "sr_capability_subtlv": [
+          {
+            "range": 64000,
+            "sid": 100000
+          }
+        ]
+      },
+      "mt_id_tlv": [
+        {
+          "o_flag": false,
+          "a_flag": false,
+          "mt_id": 0
+        },
+        {
+          "o_flag": false,
+          "a_flag": false,
+          "mt_id": 2
+        }
+      ],
+      "name": "xrd17",
+      "node_msd": [
+        {
+          "msd_type": 1,
+          "msd_value": 10
+        }
+      ],
+      "peer_asn": 100000,
+      "peer_ip": "10.0.0.31",
+      "prefix_attr_tlvs": null,
+      "protocol": "IS-IS Level 1",
+      "protocol_id": 1,
+      "router_id": "10.0.0.17",
+      "sids": [
+        {
+          "srv6_sid": "fc00:2:17::",
+          "srv6_endpoint_behavior": {
+            "endpoint_behavior": 48,
+            "flag": 0,
+            "algo": 129
+          },
+          "srv6_sid_structure": {
+            "locator_block_length": 32,
+            "locator_node_length": 16,
+            "function_length": 0,
+            "argument_length": 80
+          }
+        },
+        {
+          "srv6_sid": "fc00:1:17::",
+          "srv6_endpoint_behavior": {
+            "endpoint_behavior": 48,
+            "flag": 0,
+            "algo": 128
+          },
+          "srv6_sid_structure": {
+            "locator_block_length": 32,
+            "locator_node_length": 16,
+            "function_length": 0,
+            "argument_length": 80
+          }
+        },
+        {
+          "srv6_sid": "fc00:0:17::",
+          "srv6_endpoint_behavior": {
+            "endpoint_behavior": 48,
+            "flag": 0,
+            "algo": 0
+          },
+          "srv6_sid_structure": {
+            "locator_block_length": 32,
+            "locator_node_length": 16,
+            "function_length": 0,
+            "argument_length": 80
+          }
+        },
+        {
+          "srv6_sid": "fc00:3:17::",
+          "srv6_endpoint_behavior": {
+            "endpoint_behavior": 48,
+            "flag": 0,
+            "algo": 130
+          },
+          "srv6_sid_structure": {
+            "locator_block_length": 32,
+            "locator_node_length": 16,
+            "function_length": 0,
+            "argument_length": 80
+          }
+        }
+      ],
+      "sr_algorithm": [
+        0,
+        1,
+        128,
+        129,
+        130
+      ],
+      "sr_local_block": {
+        "flags": 0,
+        "subranges": [
+          {
+            "range_size": 1000,
+            "label": 15000
+          }
+        ]
+      },
+      "srv6_capabilities_tlv": {
+        "o_flag": false
+      },
+      "is_adj_rib_in": false,
+      "is_prepolicy": false,
+      "prefixes": [
+        {
+          "_key": "1_0_0_0_0_10.0.0.17_32_0000.0000.0017",
+          "prefix": "10.0.0.17",
+          "prefix_attr_tlvs": {
+            "flags": {
+              "n_flag": true,
+              "r_flag": false,
+              "x_flag": false
+            },
+            "ls_prefix_sid": [
+              {
+                "algo": 0,
+                "flags": {
+                  "e_flag": false,
+                  "l_flag": false,
+                  "n_flag": true,
+                  "p_flag": false,
+                  "r_flag": false,
+                  "v_flag": false
+                },
+                "prefix_sid": 17
+              },
+              {
+                "algo": 128,
+                "flags": {
+                  "e_flag": false,
+                  "l_flag": false,
+                  "n_flag": true,
+                  "p_flag": false,
+                  "r_flag": false,
+                  "v_flag": false
+                },
+                "prefix_sid": 1728
+              },
+              {
+                "algo": 129,
+                "flags": {
+                  "e_flag": false,
+                  "l_flag": false,
+                  "n_flag": true,
+                  "p_flag": false,
+                  "r_flag": false,
+                  "v_flag": false
+                },
+                "prefix_sid": 1729
+              },
+              {
+                "algo": 130,
+                "flags": {
+                  "e_flag": false,
+                  "l_flag": false,
+                  "n_flag": true,
+                  "p_flag": false,
+                  "r_flag": false,
+                  "v_flag": false
+                },
+                "prefix_sid": 1730
+              }
+            ],
+            "source_router_id": "10.0.0.17"
+          },
+          "prefix_len": 32,
+          "prefix_metric": null
+        },
+        {
+          "_key": "1_0_2_0_0_fc00:0:17::1_128_0000.0000.0017",
+          "prefix": "fc00:0:17::1",
+          "prefix_attr_tlvs": {
+            "flags": {
+              "n_flag": true,
+              "r_flag": false,
+              "x_flag": false
+            }
+          },
+          "prefix_len": 128,
+          "prefix_metric": null
+        }
+      ]
+    },
+    {
+      "_key": "1_0_0_0000.0000.0032",
+      "_id": "igp_node/1_0_0_0000.0000.0032",
+      "_rev": "_kk95k_2---",
+      "area_id": "49.0102",
+      "asn": 100000,
+      "domain_id": 0,
+      "flex_algo_definition": null,
+      "igp_router_id": "0000.0000.0032",
+      "ls_sr_capabilities": {
+        "flags": {
+          "i_flag": true,
+          "v_flag": false
+        },
+        "sr_capability_subtlv": [
+          {
+            "range": 64000,
+            "sid": 100000
+          }
+        ]
+      },
+      "mt_id_tlv": [
+        {
+          "o_flag": false,
+          "a_flag": false,
+          "mt_id": 0
+        },
+        {
+          "o_flag": false,
+          "a_flag": false,
+          "mt_id": 2
+        }
+      ],
+      "name": "xrd32",
+      "node_msd": [
+        {
+          "msd_type": 1,
+          "msd_value": 10
+        }
+      ],
+      "peer_asn": 100000,
+      "peer_ip": "10.0.0.31",
+      "prefix_attr_tlvs": null,
+      "protocol": "IS-IS Level 1",
+      "protocol_id": 1,
+      "router_id": "10.0.0.32",
+      "sids": [
+        {
+          "srv6_sid": "fc00:0:32::",
+          "srv6_endpoint_behavior": {
+            "endpoint_behavior": 48,
+            "flag": 0,
+            "algo": 0
+          },
+          "srv6_sid_structure": {
+            "locator_block_length": 32,
+            "locator_node_length": 16,
+            "function_length": 0,
+            "argument_length": 80
+          }
+        }
+      ],
+      "sr_algorithm": [
+        0,
+        1
+      ],
+      "sr_local_block": {
+        "flags": 0,
+        "subranges": [
+          {
+            "range_size": 1000,
+            "label": 15000
+          }
+        ]
+      },
+      "srv6_capabilities_tlv": {
+        "o_flag": false
+      },
+      "is_prepolicy": false,
+      "is_adj_rib_in": false,
+      "prefixes": [
+        {
+          "_key": "1_0_0_0_0_10.0.0.32_32_0000.0000.0032",
+          "prefix": "10.0.0.32",
+          "prefix_attr_tlvs": {
+            "flags": {
+              "n_flag": true,
+              "r_flag": false,
+              "x_flag": false
+            },
+            "ls_prefix_sid": [
+              {
+                "algo": 0,
+                "flags": {
+                  "e_flag": false,
+                  "l_flag": false,
+                  "n_flag": true,
+                  "p_flag": false,
+                  "r_flag": false,
+                  "v_flag": false
+                },
+                "prefix_sid": 32
+              }
+            ],
+            "source_router_id": "10.0.0.32"
+          },
+          "prefix_len": 32,
+          "prefix_metric": null
+        },
+        {
+          "_key": "1_0_2_0_0_fc00:0:32::1_128_0000.0000.0032",
+          "prefix": "fc00:0:32::1",
+          "prefix_attr_tlvs": {
+            "flags": {
+              "n_flag": true,
+              "r_flag": false,
+              "x_flag": false
+            }
+          },
+          "prefix_len": 128,
+          "prefix_metric": null
+        }
+      ]
+    },
+    {
+      "_key": "1_0_0_0000.0000.0028",
+      "_id": "igp_node/1_0_0_0000.0000.0028",
+      "_rev": "_kk95k_6---",
+      "area_id": "49.0101",
+      "asn": 100000,
+      "domain_id": 0,
+      "flex_algo_definition": null,
+      "igp_router_id": "0000.0000.0028",
+      "ls_sr_capabilities": {
+        "flags": {
+          "i_flag": true,
+          "v_flag": false
+        },
+        "sr_capability_subtlv": [
+          {
+            "range": 64000,
+            "sid": 100000
+          }
+        ]
+      },
+      "mt_id_tlv": [
+        {
+          "o_flag": false,
+          "a_flag": false,
+          "mt_id": 0
+        },
+        {
+          "o_flag": false,
+          "a_flag": false,
+          "mt_id": 2
+        }
+      ],
+      "name": "xrd28",
+      "node_msd": [
+        {
+          "msd_type": 1,
+          "msd_value": 10
+        }
+      ],
+      "peer_asn": 100000,
+      "peer_ip": "10.0.0.31",
+      "prefix_attr_tlvs": null,
+      "protocol": "IS-IS Level 1",
+      "protocol_id": 1,
+      "router_id": "10.0.0.28",
+      "sids": [
+        {
+          "srv6_sid": "fc00:0:28::",
+          "srv6_endpoint_behavior": {
+            "endpoint_behavior": 48,
+            "flag": 0,
+            "algo": 0
+          },
+          "srv6_sid_structure": {
+            "locator_block_length": 32,
+            "locator_node_length": 16,
+            "function_length": 0,
+            "argument_length": 80
+          }
+        }
+      ],
+      "sr_algorithm": [
+        0,
+        1
+      ],
+      "sr_local_block": {
+        "flags": 0,
+        "subranges": [
+          {
+            "range_size": 1000,
+            "label": 15000
+          }
+        ]
+      },
+      "srv6_capabilities_tlv": {
+        "o_flag": false
+      },
+      "is_prepolicy": false,
+      "is_adj_rib_in": false,
+      "prefixes": [
+        {
+          "_key": "1_0_0_0_0_10.0.0.28_32_0000.0000.0028",
+          "prefix": "10.0.0.28",
+          "prefix_attr_tlvs": {
+            "flags": {
+              "n_flag": true,
+              "r_flag": false,
+              "x_flag": false
+            },
+            "ls_prefix_sid": [
+              {
+                "algo": 0,
+                "flags": {
+                  "e_flag": false,
+                  "l_flag": false,
+                  "n_flag": true,
+                  "p_flag": false,
+                  "r_flag": false,
+                  "v_flag": false
+                },
+                "prefix_sid": 28
+              }
+            ],
+            "source_router_id": "10.0.0.28"
+          },
+          "prefix_len": 32,
+          "prefix_metric": null
+        },
+        {
+          "_key": "1_0_2_0_0_fc00:0:28::1_128_0000.0000.0028",
+          "prefix": "fc00:0:28::1",
+          "prefix_attr_tlvs": {
+            "flags": {
+              "n_flag": true,
+              "r_flag": false,
+              "x_flag": false
+            }
+          },
+          "prefix_len": 128,
+          "prefix_metric": null
+        }
+      ]
+    },
+    {
+      "_key": "2_0_0_0000.0000.0016",
+      "_id": "igp_node/2_0_0_0000.0000.0016",
+      "_rev": "_kk95kAG---",
+      "area_id": "49.0101",
+      "asn": 100000,
+      "domain_id": 0,
+      "flex_algo_definition": [
+        {
+          "flex_algo": 128,
+          "metric_type": 1,
+          "calculation_type": 0,
+          "priority": 128,
+          "sub_tlv": {
+            "include_any": [
+              2
+            ]
+          }
+        },
+        {
+          "flex_algo": 129,
+          "metric_type": 1,
+          "calculation_type": 0,
+          "priority": 128,
+          "sub_tlv": {
+            "include_any": [
+              4
+            ]
+          }
+        },
+        {
+          "flex_algo": 130,
+          "metric_type": 1,
+          "calculation_type": 0,
+          "priority": 128,
+          "sub_tlv": {
+            "include_any": [
+              8
+            ]
+          }
+        }
+      ],
+      "igp_router_id": "0000.0000.0016",
+      "ls_sr_capabilities": {
+        "flags": {
+          "i_flag": true,
+          "v_flag": false
+        },
+        "sr_capability_subtlv": [
+          {
+            "range": 64000,
+            "sid": 100000
+          }
+        ]
+      },
+      "mt_id_tlv": [
+        {
+          "o_flag": false,
+          "a_flag": false,
+          "mt_id": 0
+        },
+        {
+          "o_flag": false,
+          "a_flag": false,
+          "mt_id": 2
+        }
+      ],
+      "name": "xrd16",
+      "node_msd": [
+        {
+          "msd_type": 1,
+          "msd_value": 10
+        }
+      ],
+      "peer_asn": 100000,
+      "peer_ip": "10.0.0.1",
+      "prefix_attr_tlvs": null,
+      "protocol": "ISIS Level 1-2",
+      "protocol_id": 2,
+      "router_id": "10.0.0.16",
+      "sids": [
+        {
+          "srv6_sid": "fc00:2:16::",
+          "srv6_endpoint_behavior": {
+            "endpoint_behavior": 48,
+            "flag": 0,
+            "algo": 129
+          },
+          "srv6_sid_structure": {
+            "locator_block_length": 32,
+            "locator_node_length": 16,
+            "function_length": 0,
+            "argument_length": 80
+          }
+        },
+        {
+          "srv6_sid": "fc00:1:16::",
+          "srv6_endpoint_behavior": {
+            "endpoint_behavior": 48,
+            "flag": 0,
+            "algo": 128
+          },
+          "srv6_sid_structure": {
+            "locator_block_length": 32,
+            "locator_node_length": 16,
+            "function_length": 0,
+            "argument_length": 80
+          }
+        },
+        {
+          "srv6_sid": "fc00:0:16::",
+          "srv6_endpoint_behavior": {
+            "endpoint_behavior": 48,
+            "flag": 0,
+            "algo": 0
+          },
+          "srv6_sid_structure": {
+            "locator_block_length": 32,
+            "locator_node_length": 16,
+            "function_length": 0,
+            "argument_length": 80
+          }
+        },
+        {
+          "srv6_sid": "fc00:3:16::",
+          "srv6_endpoint_behavior": {
+            "endpoint_behavior": 48,
+            "flag": 0,
+            "algo": 130
+          },
+          "srv6_sid_structure": {
+            "locator_block_length": 32,
+            "locator_node_length": 16,
+            "function_length": 0,
+            "argument_length": 80
+          }
+        }
+      ],
+      "sr_algorithm": [
+        0,
+        1,
+        128,
+        129,
+        130
+      ],
+      "sr_local_block": {
+        "flags": 0,
+        "subranges": [
+          {
+            "range_size": 1000,
+            "label": 15000
+          }
+        ]
+      },
+      "srv6_capabilities_tlv": {
+        "o_flag": false
+      },
+      "is_adj_rib_in": false,
+      "is_prepolicy": false,
+      "prefixes": [
+        {
+          "_key": "1_0_0_0_0_10.0.0.16_32_0000.0000.0016",
+          "prefix": "10.0.0.16",
+          "prefix_attr_tlvs": {
+            "flags": {
+              "n_flag": true,
+              "r_flag": false,
+              "x_flag": false
+            },
+            "ls_prefix_sid": [
+              {
+                "algo": 0,
+                "flags": {
+                  "e_flag": false,
+                  "l_flag": false,
+                  "n_flag": true,
+                  "p_flag": false,
+                  "r_flag": false,
+                  "v_flag": false
+                },
+                "prefix_sid": 16
+              }
+            ]
+          },
+          "prefix_len": 32,
+          "prefix_metric": null
+        },
+        {
+          "_key": "1_0_2_0_0_fc00:0:16::1_128_0000.0000.0016",
+          "prefix": "fc00:0:16::1",
+          "prefix_attr_tlvs": {
+            "flags": {
+              "n_flag": true,
+              "r_flag": false,
+              "x_flag": false
+            }
+          },
+          "prefix_len": 128,
+          "prefix_metric": null
+        }
+      ]
+    },
+    {
+      "_key": "1_0_0_0000.0000.0031",
+      "_id": "igp_node/1_0_0_0000.0000.0031",
+      "_rev": "_kk95kAO---",
+      "area_id": "49.0102",
+      "asn": 100000,
+      "domain_id": 0,
+      "flex_algo_definition": null,
+      "igp_router_id": "0000.0000.0031",
+      "ls_sr_capabilities": {
+        "flags": {
+          "i_flag": true,
+          "v_flag": false
+        },
+        "sr_capability_subtlv": [
+          {
+            "range": 64000,
+            "sid": 100000
+          }
+        ]
+      },
+      "mt_id_tlv": [
+        {
+          "o_flag": false,
+          "a_flag": false,
+          "mt_id": 0
+        },
+        {
+          "o_flag": false,
+          "a_flag": false,
+          "mt_id": 2
+        }
+      ],
+      "name": "xrd31",
+      "node_msd": [
+        {
+          "msd_type": 1,
+          "msd_value": 10
+        }
+      ],
+      "peer_asn": 100000,
+      "peer_ip": "10.0.0.31",
+      "prefix_attr_tlvs": null,
+      "protocol": "IS-IS Level 1",
+      "protocol_id": 1,
+      "router_id": "10.0.0.31",
+      "sids": [
+        {
+          "srv6_sid": "fc00:0:31::",
+          "srv6_endpoint_behavior": {
+            "endpoint_behavior": 48,
+            "flag": 0,
+            "algo": 0
+          },
+          "srv6_sid_structure": {
+            "locator_block_length": 32,
+            "locator_node_length": 16,
+            "function_length": 0,
+            "argument_length": 80
+          }
+        }
+      ],
+      "sr_algorithm": [
+        0,
+        1
+      ],
+      "sr_local_block": {
+        "flags": 0,
+        "subranges": [
+          {
+            "range_size": 1000,
+            "label": 15000
+          }
+        ]
+      },
+      "srv6_capabilities_tlv": {
+        "o_flag": false
+      },
+      "is_adj_rib_in": false,
+      "is_prepolicy": false,
+      "prefixes": [
+        {
+          "_key": "1_0_0_0_0_10.0.0.31_32_0000.0000.0031",
+          "prefix": "10.0.0.31",
+          "prefix_attr_tlvs": {
+            "flags": {
+              "n_flag": true,
+              "r_flag": false,
+              "x_flag": false
+            },
+            "ls_prefix_sid": [
+              {
+                "algo": 0,
+                "flags": {
+                  "e_flag": false,
+                  "l_flag": false,
+                  "n_flag": true,
+                  "p_flag": false,
+                  "r_flag": false,
+                  "v_flag": false
+                },
+                "prefix_sid": 31
+              }
+            ],
+            "source_router_id": "10.0.0.31"
+          },
+          "prefix_len": 32,
+          "prefix_metric": null
+        },
+        {
+          "_key": "1_0_2_0_0_fc00:0:31::1_128_0000.0000.0031",
+          "prefix": "fc00:0:31::1",
+          "prefix_attr_tlvs": {
+            "flags": {
+              "n_flag": true,
+              "r_flag": false,
+              "x_flag": false
+            }
+          },
+          "prefix_len": 128,
+          "prefix_metric": null
+        }
+      ]
+    },
+    {
+      "_key": "2_0_0_0000.0000.0015",
+      "_id": "igp_node/2_0_0_0000.0000.0015",
+      "_rev": "_kk95kAW---",
+      "area_id": "49.0101",
+      "asn": 100000,
+      "domain_id": 0,
+      "flex_algo_definition": [
+        {
+          "flex_algo": 128,
+          "metric_type": 1,
+          "calculation_type": 0,
+          "priority": 128,
+          "sub_tlv": {
+            "include_any": [
+              2
+            ]
+          }
+        },
+        {
+          "flex_algo": 129,
+          "metric_type": 1,
+          "calculation_type": 0,
+          "priority": 128,
+          "sub_tlv": {
+            "include_any": [
+              4
+            ]
+          }
+        },
+        {
+          "flex_algo": 130,
+          "metric_type": 1,
+          "calculation_type": 0,
+          "priority": 128,
+          "sub_tlv": {
+            "include_any": [
+              8
+            ]
+          }
+        }
+      ],
+      "igp_router_id": "0000.0000.0015",
+      "ls_sr_capabilities": {
+        "flags": {
+          "i_flag": true,
+          "v_flag": false
+        },
+        "sr_capability_subtlv": [
+          {
+            "range": 64000,
+            "sid": 100000
+          }
+        ]
+      },
+      "mt_id_tlv": [
+        {
+          "o_flag": false,
+          "a_flag": false,
+          "mt_id": 0
+        },
+        {
+          "o_flag": false,
+          "a_flag": false,
+          "mt_id": 2
+        }
+      ],
+      "name": "xrd15",
+      "node_msd": [
+        {
+          "msd_type": 1,
+          "msd_value": 10
+        }
+      ],
+      "peer_asn": 100000,
+      "peer_ip": "10.0.0.1",
+      "prefix_attr_tlvs": null,
+      "protocol": "ISIS Level 1-2",
+      "protocol_id": 2,
+      "router_id": "10.0.0.15",
+      "sids": [
+        {
+          "srv6_sid": "fc00:2:15::",
+          "srv6_endpoint_behavior": {
+            "endpoint_behavior": 48,
+            "flag": 0,
+            "algo": 129
+          },
+          "srv6_sid_structure": {
+            "locator_block_length": 32,
+            "locator_node_length": 16,
+            "function_length": 0,
+            "argument_length": 80
+          }
+        },
+        {
+          "srv6_sid": "fc00:1:15::",
+          "srv6_endpoint_behavior": {
+            "endpoint_behavior": 48,
+            "flag": 0,
+            "algo": 128
+          },
+          "srv6_sid_structure": {
+            "locator_block_length": 32,
+            "locator_node_length": 16,
+            "function_length": 0,
+            "argument_length": 80
+          }
+        },
+        {
+          "srv6_sid": "fc00:0:15::",
+          "srv6_endpoint_behavior": {
+            "endpoint_behavior": 48,
+            "flag": 0,
+            "algo": 0
+          },
+          "srv6_sid_structure": {
+            "locator_block_length": 32,
+            "locator_node_length": 16,
+            "function_length": 0,
+            "argument_length": 80
+          }
+        },
+        {
+          "srv6_sid": "fc00:3:15::",
+          "srv6_endpoint_behavior": {
+            "endpoint_behavior": 48,
+            "flag": 0,
+            "algo": 130
+          },
+          "srv6_sid_structure": {
+            "locator_block_length": 32,
+            "locator_node_length": 16,
+            "function_length": 0,
+            "argument_length": 80
+          }
+        }
+      ],
+      "sr_algorithm": [
+        0,
+        1,
+        128,
+        129,
+        130
+      ],
+      "sr_local_block": {
+        "flags": 0,
+        "subranges": [
+          {
+            "range_size": 1000,
+            "label": 15000
+          }
+        ]
+      },
+      "srv6_capabilities_tlv": {
+        "o_flag": false
+      },
+      "is_adj_rib_in": false,
+      "is_prepolicy": false,
+      "prefixes": [
+        {
+          "_key": "1_0_0_0_0_10.0.0.15_32_0000.0000.0015",
+          "prefix": "10.0.0.15",
+          "prefix_attr_tlvs": {
+            "flags": {
+              "n_flag": true,
+              "r_flag": false,
+              "x_flag": false
+            },
+            "ls_prefix_sid": [
+              {
+                "algo": 0,
+                "flags": {
+                  "e_flag": false,
+                  "l_flag": false,
+                  "n_flag": true,
+                  "p_flag": false,
+                  "r_flag": false,
+                  "v_flag": false
+                },
+                "prefix_sid": 15
+              }
+            ]
+          },
+          "prefix_len": 32,
+          "prefix_metric": null
+        },
+        {
+          "_key": "1_0_2_0_0_fc00:0:15::1_128_0000.0000.0015",
+          "prefix": "fc00:0:15::1",
+          "prefix_attr_tlvs": {
+            "flags": {
+              "n_flag": true,
+              "r_flag": false,
+              "x_flag": false
+            }
+          },
+          "prefix_len": 128,
+          "prefix_metric": null
+        }
+      ]
+    },
+    {
+      "_key": "2_0_0_0000.0000.0003",
+      "_id": "igp_node/2_0_0_0000.0000.0003",
+      "_rev": "_kk95kBi---",
+      "area_id": "49.0001",
+      "asn": 100000,
+      "domain_id": 0,
+      "flex_algo_definition": [
+        {
+          "flex_algo": 128,
+          "metric_type": 1,
+          "calculation_type": 0,
+          "priority": 128,
+          "sub_tlv": {
+            "include_any": [
+              2
+            ]
+          }
+        },
+        {
+          "flex_algo": 129,
+          "metric_type": 1,
+          "calculation_type": 0,
+          "priority": 128,
+          "sub_tlv": {
+            "include_any": [
+              4
+            ]
+          }
+        },
+        {
+          "flex_algo": 130,
+          "metric_type": 1,
+          "calculation_type": 0,
+          "priority": 128,
+          "sub_tlv": {
+            "include_any": [
+              8
+            ]
+          }
+        }
+      ],
+      "igp_router_id": "0000.0000.0003",
+      "ls_sr_capabilities": {
+        "flags": {
+          "i_flag": true,
+          "v_flag": false
+        },
+        "sr_capability_subtlv": [
+          {
+            "range": 64000,
+            "sid": 100000
+          }
+        ]
+      },
+      "mt_id_tlv": [
+        {
+          "o_flag": false,
+          "a_flag": false,
+          "mt_id": 0
+        },
+        {
+          "o_flag": false,
+          "a_flag": false,
+          "mt_id": 2
+        }
+      ],
+      "name": "xrd03",
+      "node_msd": [
+        {
+          "msd_type": 1,
+          "msd_value": 10
+        }
+      ],
+      "peer_asn": 100000,
+      "peer_ip": "10.0.0.1",
+      "prefix_attr_tlvs": null,
+      "protocol": "IS-IS Level 2",
+      "protocol_id": 2,
+      "router_id": "10.0.0.3",
+      "sids": [
+        {
+          "srv6_sid": "fc00:2:3::",
+          "srv6_endpoint_behavior": {
+            "endpoint_behavior": 48,
+            "flag": 0,
+            "algo": 129
+          },
+          "srv6_sid_structure": {
+            "locator_block_length": 32,
+            "locator_node_length": 16,
+            "function_length": 0,
+            "argument_length": 80
+          }
+        },
+        {
+          "srv6_sid": "fc00:1:3::",
+          "srv6_endpoint_behavior": {
+            "endpoint_behavior": 48,
+            "flag": 0,
+            "algo": 128
+          },
+          "srv6_sid_structure": {
+            "locator_block_length": 32,
+            "locator_node_length": 16,
+            "function_length": 0,
+            "argument_length": 80
+          }
+        },
+        {
+          "srv6_sid": "fc00:0:3::",
+          "srv6_endpoint_behavior": {
+            "endpoint_behavior": 48,
+            "flag": 0,
+            "algo": 0
+          },
+          "srv6_sid_structure": {
+            "locator_block_length": 32,
+            "locator_node_length": 16,
+            "function_length": 0,
+            "argument_length": 80
+          }
+        },
+        {
+          "srv6_sid": "fc00:3:3::",
+          "srv6_endpoint_behavior": {
+            "endpoint_behavior": 48,
+            "flag": 0,
+            "algo": 130
+          },
+          "srv6_sid_structure": {
+            "locator_block_length": 32,
+            "locator_node_length": 16,
+            "function_length": 0,
+            "argument_length": 80
+          }
+        }
+      ],
+      "sr_algorithm": [
+        0,
+        1,
+        128,
+        129,
+        130
+      ],
+      "sr_local_block": {
+        "flags": 0,
+        "subranges": [
+          {
+            "range_size": 1000,
+            "label": 15000
+          }
+        ]
+      },
+      "srv6_capabilities_tlv": {
+        "o_flag": false
+      },
+      "is_adj_rib_in": false,
+      "is_prepolicy": false,
+      "prefixes": [
+        {
+          "_key": "2_0_0_0_0_10.0.0.3_32_0000.0000.0003",
+          "prefix": "10.0.0.3",
+          "prefix_attr_tlvs": {
+            "flags": {
+              "n_flag": true,
+              "r_flag": false,
+              "x_flag": false
+            },
+            "ls_prefix_sid": [
+              {
+                "algo": 0,
+                "flags": {
+                  "e_flag": false,
+                  "l_flag": false,
+                  "n_flag": true,
+                  "p_flag": false,
+                  "r_flag": false,
+                  "v_flag": false
+                },
+                "prefix_sid": 3
+              }
+            ],
+            "source_router_id": "10.0.0.3"
+          },
+          "prefix_len": 32,
+          "prefix_metric": null
+        },
+        {
+          "_key": "2_0_2_0_0_fc00:0:3::1_128_0000.0000.0003",
+          "prefix": "fc00:0:3::1",
+          "prefix_attr_tlvs": {
+            "flags": {
+              "n_flag": true,
+              "r_flag": false,
+              "x_flag": false
+            }
+          },
+          "prefix_len": 128,
+          "prefix_metric": null
+        }
+      ]
+    },
+    {
+      "_key": "2_0_0_0000.0000.0004",
+      "_id": "igp_node/2_0_0_0000.0000.0004",
+      "_rev": "_kk95kCG---",
+      "area_id": "49.0001",
+      "asn": 100000,
+      "domain_id": 0,
+      "flex_algo_definition": [
+        {
+          "flex_algo": 128,
+          "metric_type": 1,
+          "calculation_type": 0,
+          "priority": 128,
+          "sub_tlv": {
+            "include_any": [
+              2
+            ]
+          }
+        },
+        {
+          "flex_algo": 129,
+          "metric_type": 1,
+          "calculation_type": 0,
+          "priority": 128,
+          "sub_tlv": {
+            "include_any": [
+              4
+            ]
+          }
+        },
+        {
+          "flex_algo": 130,
+          "metric_type": 1,
+          "calculation_type": 0,
+          "priority": 128,
+          "sub_tlv": {
+            "include_any": [
+              8
+            ]
+          }
+        }
+      ],
+      "igp_router_id": "0000.0000.0004",
+      "ls_sr_capabilities": {
+        "flags": {
+          "i_flag": true,
+          "v_flag": false
+        },
+        "sr_capability_subtlv": [
+          {
+            "range": 64000,
+            "sid": 100000
+          }
+        ]
+      },
+      "mt_id_tlv": [
+        {
+          "o_flag": false,
+          "a_flag": false,
+          "mt_id": 0
+        },
+        {
+          "o_flag": false,
+          "a_flag": false,
+          "mt_id": 2
+        }
+      ],
+      "name": "xrd04",
+      "node_msd": [
+        {
+          "msd_type": 1,
+          "msd_value": 10
+        }
+      ],
+      "peer_asn": 100000,
+      "peer_ip": "10.0.0.1",
+      "prefix_attr_tlvs": null,
+      "protocol": "IS-IS Level 2",
+      "protocol_id": 2,
+      "router_id": "10.0.0.4",
+      "sids": [
+        {
+          "srv6_sid": "fc00:2:4::",
+          "srv6_endpoint_behavior": {
+            "endpoint_behavior": 48,
+            "flag": 0,
+            "algo": 129
+          },
+          "srv6_sid_structure": {
+            "locator_block_length": 32,
+            "locator_node_length": 16,
+            "function_length": 0,
+            "argument_length": 80
+          }
+        },
+        {
+          "srv6_sid": "fc00:1:4::",
+          "srv6_endpoint_behavior": {
+            "endpoint_behavior": 48,
+            "flag": 0,
+            "algo": 128
+          },
+          "srv6_sid_structure": {
+            "locator_block_length": 32,
+            "locator_node_length": 16,
+            "function_length": 0,
+            "argument_length": 80
+          }
+        },
+        {
+          "srv6_sid": "fc00:0:4::",
+          "srv6_endpoint_behavior": {
+            "endpoint_behavior": 48,
+            "flag": 0,
+            "algo": 0
+          },
+          "srv6_sid_structure": {
+            "locator_block_length": 32,
+            "locator_node_length": 16,
+            "function_length": 0,
+            "argument_length": 80
+          }
+        },
+        {
+          "srv6_sid": "fc00:3:4::",
+          "srv6_endpoint_behavior": {
+            "endpoint_behavior": 48,
+            "flag": 0,
+            "algo": 130
+          },
+          "srv6_sid_structure": {
+            "locator_block_length": 32,
+            "locator_node_length": 16,
+            "function_length": 0,
+            "argument_length": 80
+          }
+        }
+      ],
+      "sr_algorithm": [
+        0,
+        1,
+        128,
+        129,
+        130
+      ],
+      "sr_local_block": {
+        "flags": 0,
+        "subranges": [
+          {
+            "range_size": 1000,
+            "label": 15000
+          }
+        ]
+      },
+      "srv6_capabilities_tlv": {
+        "o_flag": false
+      },
+      "is_prepolicy": false,
+      "is_adj_rib_in": false,
+      "prefixes": [
+        {
+          "_key": "2_0_2_0_0_fc00:0:4::1_128_0000.0000.0004",
+          "prefix": "fc00:0:4::1",
+          "prefix_attr_tlvs": {
+            "flags": {
+              "n_flag": true,
+              "r_flag": false,
+              "x_flag": false
+            }
+          },
+          "prefix_len": 128,
+          "prefix_metric": null
+        },
+        {
+          "_key": "2_0_0_0_0_10.0.0.4_32_0000.0000.0004",
+          "prefix": "10.0.0.4",
+          "prefix_attr_tlvs": {
+            "flags": {
+              "n_flag": true,
+              "r_flag": false,
+              "x_flag": false
+            },
+            "ls_prefix_sid": [
+              {
+                "algo": 0,
+                "flags": {
+                  "e_flag": false,
+                  "l_flag": false,
+                  "n_flag": true,
+                  "p_flag": false,
+                  "r_flag": false,
+                  "v_flag": false
+                },
+                "prefix_sid": 4
+              }
+            ],
+            "source_router_id": "10.0.0.4"
+          },
+          "prefix_len": 32,
+          "prefix_metric": null
+        }
+      ]
+    },
+    {
+      "_key": "2_0_0_0000.0000.0002",
+      "_id": "igp_node/2_0_0_0000.0000.0002",
+      "_rev": "_kk95kCm---",
+      "area_id": "49.0001",
+      "asn": 100000,
+      "domain_id": 0,
+      "flex_algo_definition": [
+        {
+          "flex_algo": 128,
+          "metric_type": 1,
+          "calculation_type": 0,
+          "priority": 128,
+          "sub_tlv": {
+            "include_any": [
+              2
+            ]
+          }
+        },
+        {
+          "flex_algo": 129,
+          "metric_type": 1,
+          "calculation_type": 0,
+          "priority": 128,
+          "sub_tlv": {
+            "include_any": [
+              4
+            ]
+          }
+        },
+        {
+          "flex_algo": 130,
+          "metric_type": 1,
+          "calculation_type": 0,
+          "priority": 128,
+          "sub_tlv": {
+            "include_any": [
+              8
+            ]
+          }
+        }
+      ],
+      "igp_router_id": "0000.0000.0002",
+      "ls_sr_capabilities": {
+        "flags": {
+          "i_flag": true,
+          "v_flag": false
+        },
+        "sr_capability_subtlv": [
+          {
+            "range": 64000,
+            "sid": 100000
+          }
+        ]
+      },
+      "mt_id_tlv": [
+        {
+          "o_flag": false,
+          "a_flag": false,
+          "mt_id": 0
+        },
+        {
+          "o_flag": false,
+          "a_flag": false,
+          "mt_id": 2
+        }
+      ],
+      "name": "xrd02",
+      "node_msd": [
+        {
+          "msd_type": 1,
+          "msd_value": 10
+        }
+      ],
+      "peer_asn": 100000,
+      "peer_ip": "10.0.0.1",
+      "prefix_attr_tlvs": null,
+      "protocol": "IS-IS Level 2",
+      "protocol_id": 2,
+      "router_id": "10.0.0.2",
+      "sids": [
+        {
+          "srv6_sid": "fc00:2:2::",
+          "srv6_endpoint_behavior": {
+            "endpoint_behavior": 48,
+            "flag": 0,
+            "algo": 129
+          },
+          "srv6_sid_structure": {
+            "locator_block_length": 32,
+            "locator_node_length": 16,
+            "function_length": 0,
+            "argument_length": 80
+          }
+        },
+        {
+          "srv6_sid": "fc00:1:2::",
+          "srv6_endpoint_behavior": {
+            "endpoint_behavior": 48,
+            "flag": 0,
+            "algo": 128
+          },
+          "srv6_sid_structure": {
+            "locator_block_length": 32,
+            "locator_node_length": 16,
+            "function_length": 0,
+            "argument_length": 80
+          }
+        },
+        {
+          "srv6_sid": "fc00:0:2::",
+          "srv6_endpoint_behavior": {
+            "endpoint_behavior": 48,
+            "flag": 0,
+            "algo": 0
+          },
+          "srv6_sid_structure": {
+            "locator_block_length": 32,
+            "locator_node_length": 16,
+            "function_length": 0,
+            "argument_length": 80
+          }
+        },
+        {
+          "srv6_sid": "fc00:3:2::",
+          "srv6_endpoint_behavior": {
+            "endpoint_behavior": 48,
+            "flag": 0,
+            "algo": 130
+          },
+          "srv6_sid_structure": {
+            "locator_block_length": 32,
+            "locator_node_length": 16,
+            "function_length": 0,
+            "argument_length": 80
+          }
+        }
+      ],
+      "sr_algorithm": [
+        0,
+        1,
+        128,
+        129,
+        130
+      ],
+      "sr_local_block": {
+        "flags": 0,
+        "subranges": [
+          {
+            "range_size": 1000,
+            "label": 15000
+          }
+        ]
+      },
+      "srv6_capabilities_tlv": {
+        "o_flag": false
+      },
+      "is_adj_rib_in": false,
+      "is_prepolicy": false,
+      "prefixes": [
+        {
+          "_key": "2_0_2_0_0_fc00:0:2::1_128_0000.0000.0002",
+          "prefix": "fc00:0:2::1",
+          "prefix_attr_tlvs": {
+            "flags": {
+              "n_flag": true,
+              "r_flag": false,
+              "x_flag": false
+            }
+          },
+          "prefix_len": 128,
+          "prefix_metric": null
+        },
+        {
+          "_key": "2_0_0_0_0_10.0.0.2_32_0000.0000.0002",
+          "prefix": "10.0.0.2",
+          "prefix_attr_tlvs": {
+            "flags": {
+              "n_flag": true,
+              "r_flag": false,
+              "x_flag": false
+            },
+            "ls_prefix_sid": [
+              {
+                "algo": 0,
+                "flags": {
+                  "e_flag": false,
+                  "l_flag": false,
+                  "n_flag": true,
+                  "p_flag": false,
+                  "r_flag": false,
+                  "v_flag": false
+                },
+                "prefix_sid": 2
+              },
+              {
+                "algo": 128,
+                "flags": {
+                  "e_flag": false,
+                  "l_flag": false,
+                  "n_flag": true,
+                  "p_flag": false,
+                  "r_flag": false,
+                  "v_flag": false
+                },
+                "prefix_sid": 228
+              },
+              {
+                "algo": 129,
+                "flags": {
+                  "e_flag": false,
+                  "l_flag": false,
+                  "n_flag": true,
+                  "p_flag": false,
+                  "r_flag": false,
+                  "v_flag": false
+                },
+                "prefix_sid": 229
+              },
+              {
+                "algo": 130,
+                "flags": {
+                  "e_flag": false,
+                  "l_flag": false,
+                  "n_flag": true,
+                  "p_flag": false,
+                  "r_flag": false,
+                  "v_flag": false
+                },
+                "prefix_sid": 230
+              }
+            ],
+            "source_router_id": "10.0.0.2"
+          },
+          "prefix_len": 32,
+          "prefix_metric": null
+        }
+      ]
+    },
+    {
+      "_key": "2_0_0_0000.0000.0007",
+      "_id": "igp_node/2_0_0_0000.0000.0007",
+      "_rev": "_kk95kDG---",
+      "area_id": "49.0001",
+      "asn": 100000,
+      "domain_id": 0,
+      "flex_algo_definition": [
+        {
+          "flex_algo": 128,
+          "metric_type": 1,
+          "calculation_type": 0,
+          "priority": 128,
+          "sub_tlv": {
+            "include_any": [
+              2
+            ]
+          }
+        },
+        {
+          "flex_algo": 129,
+          "metric_type": 1,
+          "calculation_type": 0,
+          "priority": 128,
+          "sub_tlv": {
+            "include_any": [
+              4
+            ]
+          }
+        },
+        {
+          "flex_algo": 130,
+          "metric_type": 1,
+          "calculation_type": 0,
+          "priority": 128,
+          "sub_tlv": {
+            "include_any": [
+              8
+            ]
+          }
+        }
+      ],
+      "igp_router_id": "0000.0000.0007",
+      "ls_sr_capabilities": {
+        "flags": {
+          "i_flag": true,
+          "v_flag": false
+        },
+        "sr_capability_subtlv": [
+          {
+            "range": 64000,
+            "sid": 100000
+          }
+        ]
+      },
+      "mt_id_tlv": [
+        {
+          "o_flag": false,
+          "a_flag": false,
+          "mt_id": 0
+        },
+        {
+          "o_flag": false,
+          "a_flag": false,
+          "mt_id": 2
+        }
+      ],
+      "name": "xrd07",
+      "node_msd": [
+        {
+          "msd_type": 1,
+          "msd_value": 10
+        }
+      ],
+      "peer_asn": 100000,
+      "peer_ip": "10.0.0.1",
+      "prefix_attr_tlvs": null,
+      "protocol": "IS-IS Level 2",
+      "protocol_id": 2,
+      "router_id": "10.0.0.7",
+      "sids": [
+        {
+          "srv6_sid": "fc00:2:7::",
+          "srv6_endpoint_behavior": {
+            "endpoint_behavior": 48,
+            "flag": 0,
+            "algo": 129
+          },
+          "srv6_sid_structure": {
+            "locator_block_length": 32,
+            "locator_node_length": 16,
+            "function_length": 0,
+            "argument_length": 80
+          }
+        },
+        {
+          "srv6_sid": "fc00:1:7::",
+          "srv6_endpoint_behavior": {
+            "endpoint_behavior": 48,
+            "flag": 0,
+            "algo": 128
+          },
+          "srv6_sid_structure": {
+            "locator_block_length": 32,
+            "locator_node_length": 16,
+            "function_length": 0,
+            "argument_length": 80
+          }
+        },
+        {
+          "srv6_sid": "fc00:0:7::",
+          "srv6_endpoint_behavior": {
+            "endpoint_behavior": 48,
+            "flag": 0,
+            "algo": 0
+          },
+          "srv6_sid_structure": {
+            "locator_block_length": 32,
+            "locator_node_length": 16,
+            "function_length": 0,
+            "argument_length": 80
+          }
+        },
+        {
+          "srv6_sid": "fc00:3:7::",
+          "srv6_endpoint_behavior": {
+            "endpoint_behavior": 48,
+            "flag": 0,
+            "algo": 130
+          },
+          "srv6_sid_structure": {
+            "locator_block_length": 32,
+            "locator_node_length": 16,
+            "function_length": 0,
+            "argument_length": 80
+          }
+        }
+      ],
+      "sr_algorithm": [
+        0,
+        1,
+        128,
+        129,
+        130
+      ],
+      "sr_local_block": {
+        "flags": 0,
+        "subranges": [
+          {
+            "range_size": 1000,
+            "label": 15000
+          }
+        ]
+      },
+      "srv6_capabilities_tlv": {
+        "o_flag": false
+      },
+      "is_adj_rib_in": false,
+      "is_prepolicy": false,
+      "prefixes": [
+        {
+          "_key": "2_0_2_0_0_fc00:0:7::1_128_0000.0000.0007",
+          "prefix": "fc00:0:7::1",
+          "prefix_attr_tlvs": {
+            "flags": {
+              "n_flag": true,
+              "r_flag": false,
+              "x_flag": false
+            }
+          },
+          "prefix_len": 128,
+          "prefix_metric": null
+        },
+        {
+          "_key": "2_0_0_0_0_10.0.0.7_32_0000.0000.0007",
+          "prefix": "10.0.0.7",
+          "prefix_attr_tlvs": {
+            "flags": {
+              "n_flag": true,
+              "r_flag": false,
+              "x_flag": false
+            },
+            "ls_prefix_sid": [
+              {
+                "algo": 0,
+                "flags": {
+                  "e_flag": false,
+                  "l_flag": false,
+                  "n_flag": true,
+                  "p_flag": false,
+                  "r_flag": false,
+                  "v_flag": false
+                },
+                "prefix_sid": 7
+              }
+            ],
+            "source_router_id": "10.0.0.7"
+          },
+          "prefix_len": 32,
+          "prefix_metric": null
+        }
+      ]
+    },
+    {
+      "_key": "2_0_0_0000.0000.0001",
+      "_id": "igp_node/2_0_0_0000.0000.0001",
+      "_rev": "_kk95kDO---",
+      "area_id": "49.0001",
+      "asn": 100000,
+      "domain_id": 0,
+      "flex_algo_definition": [
+        {
+          "flex_algo": 128,
+          "metric_type": 1,
+          "calculation_type": 0,
+          "priority": 128,
+          "sub_tlv": {
+            "include_any": [
+              2
+            ]
+          }
+        },
+        {
+          "flex_algo": 129,
+          "metric_type": 1,
+          "calculation_type": 0,
+          "priority": 128,
+          "sub_tlv": {
+            "include_any": [
+              4
+            ]
+          }
+        },
+        {
+          "flex_algo": 130,
+          "metric_type": 1,
+          "calculation_type": 0,
+          "priority": 128,
+          "sub_tlv": {
+            "include_any": [
+              8
+            ]
+          }
+        }
+      ],
+      "igp_router_id": "0000.0000.0001",
+      "ls_sr_capabilities": {
+        "flags": {
+          "i_flag": true,
+          "v_flag": false
+        },
+        "sr_capability_subtlv": [
+          {
+            "range": 64000,
+            "sid": 100000
+          }
+        ]
+      },
+      "mt_id_tlv": [
+        {
+          "o_flag": false,
+          "a_flag": false,
+          "mt_id": 0
+        },
+        {
+          "o_flag": false,
+          "a_flag": false,
+          "mt_id": 2
+        }
+      ],
+      "name": "xrd01",
+      "node_msd": [
+        {
+          "msd_type": 1,
+          "msd_value": 10
+        }
+      ],
+      "peer_asn": 100000,
+      "peer_ip": "10.0.0.1",
+      "prefix_attr_tlvs": null,
+      "protocol": "IS-IS Level 2",
+      "protocol_id": 2,
+      "router_id": "10.0.0.1",
+      "sids": [
+        {
+          "srv6_sid": "fc00:2:1::",
+          "srv6_endpoint_behavior": {
+            "endpoint_behavior": 48,
+            "flag": 0,
+            "algo": 129
+          },
+          "srv6_sid_structure": {
+            "locator_block_length": 32,
+            "locator_node_length": 16,
+            "function_length": 0,
+            "argument_length": 80
+          }
+        },
+        {
+          "srv6_sid": "fc00:1:1::",
+          "srv6_endpoint_behavior": {
+            "endpoint_behavior": 48,
+            "flag": 0,
+            "algo": 128
+          },
+          "srv6_sid_structure": {
+            "locator_block_length": 32,
+            "locator_node_length": 16,
+            "function_length": 0,
+            "argument_length": 80
+          }
+        },
+        {
+          "srv6_sid": "fc00:0:1::",
+          "srv6_endpoint_behavior": {
+            "endpoint_behavior": 48,
+            "flag": 0,
+            "algo": 0
+          },
+          "srv6_sid_structure": {
+            "locator_block_length": 32,
+            "locator_node_length": 16,
+            "function_length": 0,
+            "argument_length": 80
+          }
+        },
+        {
+          "srv6_sid": "fc00:3:1::",
+          "srv6_endpoint_behavior": {
+            "endpoint_behavior": 48,
+            "flag": 0,
+            "algo": 130
+          },
+          "srv6_sid_structure": {
+            "locator_block_length": 32,
+            "locator_node_length": 16,
+            "function_length": 0,
+            "argument_length": 80
+          }
+        }
+      ],
+      "sr_algorithm": [
+        0,
+        1,
+        128,
+        129,
+        130
+      ],
+      "sr_local_block": {
+        "flags": 0,
+        "subranges": [
+          {
+            "range_size": 1000,
+            "label": 15000
+          }
+        ]
+      },
+      "srv6_capabilities_tlv": {
+        "o_flag": false
+      },
+      "is_adj_rib_in": false,
+      "is_prepolicy": false,
+      "prefixes": [
+        {
+          "_key": "2_0_2_0_0_fc00:0:1::1_128_0000.0000.0001",
+          "prefix": "fc00:0:1::1",
+          "prefix_attr_tlvs": {
+            "flags": {
+              "n_flag": true,
+              "r_flag": false,
+              "x_flag": false
+            }
+          },
+          "prefix_len": 128,
+          "prefix_metric": null
+        },
+        {
+          "_key": "2_0_0_0_0_10.0.0.1_32_0000.0000.0001",
+          "prefix": "10.0.0.1",
+          "prefix_attr_tlvs": {
+            "flags": {
+              "n_flag": true,
+              "r_flag": false,
+              "x_flag": false
+            },
+            "ls_prefix_sid": [
+              {
+                "algo": 0,
+                "flags": {
+                  "e_flag": false,
+                  "l_flag": false,
+                  "n_flag": true,
+                  "p_flag": false,
+                  "r_flag": false,
+                  "v_flag": false
+                },
+                "prefix_sid": 1
+              },
+              {
+                "algo": 128,
+                "flags": {
+                  "e_flag": false,
+                  "l_flag": false,
+                  "n_flag": true,
+                  "p_flag": false,
+                  "r_flag": false,
+                  "v_flag": false
+                },
+                "prefix_sid": 128
+              },
+              {
+                "algo": 129,
+                "flags": {
+                  "e_flag": false,
+                  "l_flag": false,
+                  "n_flag": true,
+                  "p_flag": false,
+                  "r_flag": false,
+                  "v_flag": false
+                },
+                "prefix_sid": 129
+              },
+              {
+                "algo": 130,
+                "flags": {
+                  "e_flag": false,
+                  "l_flag": false,
+                  "n_flag": true,
+                  "p_flag": false,
+                  "r_flag": false,
+                  "v_flag": false
+                },
+                "prefix_sid": 130
+              }
+            ],
+            "source_router_id": "10.0.0.1"
+          },
+          "prefix_len": 32,
+          "prefix_metric": null
+        }
+      ]
+    },
+    {
+      "_key": "2_0_0_0000.0000.0008",
+      "_id": "igp_node/2_0_0_0000.0000.0008",
+      "_rev": "_kk95kDS---",
+      "area_id": "49.0001",
+      "asn": 100000,
+      "domain_id": 0,
+      "flex_algo_definition": [
+        {
+          "flex_algo": 128,
+          "metric_type": 1,
+          "calculation_type": 0,
+          "priority": 128,
+          "sub_tlv": {
+            "include_any": [
+              2
+            ]
+          }
+        },
+        {
+          "flex_algo": 129,
+          "metric_type": 1,
+          "calculation_type": 0,
+          "priority": 128,
+          "sub_tlv": {
+            "include_any": [
+              4
+            ]
+          }
+        },
+        {
+          "flex_algo": 130,
+          "metric_type": 1,
+          "calculation_type": 0,
+          "priority": 128,
+          "sub_tlv": {
+            "include_any": [
+              8
+            ]
+          }
+        }
+      ],
+      "igp_router_id": "0000.0000.0008",
+      "ls_sr_capabilities": {
+        "flags": {
+          "i_flag": true,
+          "v_flag": false
+        },
+        "sr_capability_subtlv": [
+          {
+            "range": 64000,
+            "sid": 100000
+          }
+        ]
+      },
+      "mt_id_tlv": [
+        {
+          "o_flag": false,
+          "a_flag": false,
+          "mt_id": 0
+        },
+        {
+          "o_flag": false,
+          "a_flag": false,
+          "mt_id": 2
+        }
+      ],
+      "name": "xrd08",
+      "node_msd": [
+        {
+          "msd_type": 1,
+          "msd_value": 10
+        }
+      ],
+      "peer_asn": 100000,
+      "peer_ip": "10.0.0.1",
+      "prefix_attr_tlvs": null,
+      "protocol": "IS-IS Level 2",
+      "protocol_id": 2,
+      "router_id": "10.0.0.8",
+      "sids": [
+        {
+          "srv6_sid": "fc00:2:8::",
+          "srv6_endpoint_behavior": {
+            "endpoint_behavior": 48,
+            "flag": 0,
+            "algo": 129
+          },
+          "srv6_sid_structure": {
+            "locator_block_length": 32,
+            "locator_node_length": 16,
+            "function_length": 0,
+            "argument_length": 80
+          }
+        },
+        {
+          "srv6_sid": "fc00:1:8::",
+          "srv6_endpoint_behavior": {
+            "endpoint_behavior": 48,
+            "flag": 0,
+            "algo": 128
+          },
+          "srv6_sid_structure": {
+            "locator_block_length": 32,
+            "locator_node_length": 16,
+            "function_length": 0,
+            "argument_length": 80
+          }
+        },
+        {
+          "srv6_sid": "fc00:0:8::",
+          "srv6_endpoint_behavior": {
+            "endpoint_behavior": 48,
+            "flag": 0,
+            "algo": 0
+          },
+          "srv6_sid_structure": {
+            "locator_block_length": 32,
+            "locator_node_length": 16,
+            "function_length": 0,
+            "argument_length": 80
+          }
+        },
+        {
+          "srv6_sid": "fc00:3:8::",
+          "srv6_endpoint_behavior": {
+            "endpoint_behavior": 48,
+            "flag": 0,
+            "algo": 130
+          },
+          "srv6_sid_structure": {
+            "locator_block_length": 32,
+            "locator_node_length": 16,
+            "function_length": 0,
+            "argument_length": 80
+          }
+        }
+      ],
+      "sr_algorithm": [
+        0,
+        1,
+        128,
+        129,
+        130
+      ],
+      "sr_local_block": {
+        "flags": 0,
+        "subranges": [
+          {
+            "range_size": 1000,
+            "label": 15000
+          }
+        ]
+      },
+      "srv6_capabilities_tlv": {
+        "o_flag": false
+      },
+      "is_prepolicy": false,
+      "is_adj_rib_in": false,
+      "prefixes": [
+        {
+          "_key": "2_0_2_0_0_fc00:0:8::1_128_0000.0000.0008",
+          "prefix": "fc00:0:8::1",
+          "prefix_attr_tlvs": {
+            "flags": {
+              "n_flag": true,
+              "r_flag": false,
+              "x_flag": false
+            }
+          },
+          "prefix_len": 128,
+          "prefix_metric": null
+        },
+        {
+          "_key": "2_0_0_0_0_10.0.0.8_32_0000.0000.0008",
+          "prefix": "10.0.0.8",
+          "prefix_attr_tlvs": {
+            "flags": {
+              "n_flag": true,
+              "r_flag": false,
+              "x_flag": false
+            },
+            "ls_prefix_sid": [
+              {
+                "algo": 0,
+                "flags": {
+                  "e_flag": false,
+                  "l_flag": false,
+                  "n_flag": true,
+                  "p_flag": false,
+                  "r_flag": false,
+                  "v_flag": false
+                },
+                "prefix_sid": 8
+              }
+            ],
+            "source_router_id": "10.0.0.8"
+          },
+          "prefix_len": 32,
+          "prefix_metric": null
+        }
+      ]
+    },
+    {
+      "_key": "2_0_0_0000.0000.0006",
+      "_id": "igp_node/2_0_0_0000.0000.0006",
+      "_rev": "_kk95kDa---",
+      "area_id": "49.0001",
+      "asn": 100000,
+      "domain_id": 0,
+      "flex_algo_definition": [
+        {
+          "flex_algo": 128,
+          "metric_type": 1,
+          "calculation_type": 0,
+          "priority": 128,
+          "sub_tlv": {
+            "include_any": [
+              2
+            ]
+          }
+        },
+        {
+          "flex_algo": 129,
+          "metric_type": 1,
+          "calculation_type": 0,
+          "priority": 128,
+          "sub_tlv": {
+            "include_any": [
+              4
+            ]
+          }
+        },
+        {
+          "flex_algo": 130,
+          "metric_type": 1,
+          "calculation_type": 0,
+          "priority": 128,
+          "sub_tlv": {
+            "include_any": [
+              8
+            ]
+          }
+        }
+      ],
+      "igp_router_id": "0000.0000.0006",
+      "ls_sr_capabilities": {
+        "flags": {
+          "i_flag": true,
+          "v_flag": false
+        },
+        "sr_capability_subtlv": [
+          {
+            "range": 64000,
+            "sid": 100000
+          }
+        ]
+      },
+      "mt_id_tlv": [
+        {
+          "o_flag": false,
+          "a_flag": false,
+          "mt_id": 0
+        },
+        {
+          "o_flag": false,
+          "a_flag": false,
+          "mt_id": 2
+        }
+      ],
+      "name": "xrd06",
+      "node_msd": [
+        {
+          "msd_type": 1,
+          "msd_value": 10
+        }
+      ],
+      "peer_asn": 100000,
+      "peer_ip": "10.0.0.1",
+      "prefix_attr_tlvs": null,
+      "protocol": "IS-IS Level 2",
+      "protocol_id": 2,
+      "router_id": "10.0.0.6",
+      "sids": [
+        {
+          "srv6_sid": "fc00:2:6::",
+          "srv6_endpoint_behavior": {
+            "endpoint_behavior": 48,
+            "flag": 0,
+            "algo": 129
+          },
+          "srv6_sid_structure": {
+            "locator_block_length": 32,
+            "locator_node_length": 16,
+            "function_length": 0,
+            "argument_length": 80
+          }
+        },
+        {
+          "srv6_sid": "fc00:1:6::",
+          "srv6_endpoint_behavior": {
+            "endpoint_behavior": 48,
+            "flag": 0,
+            "algo": 128
+          },
+          "srv6_sid_structure": {
+            "locator_block_length": 32,
+            "locator_node_length": 16,
+            "function_length": 0,
+            "argument_length": 80
+          }
+        },
+        {
+          "srv6_sid": "fc00:0:6::",
+          "srv6_endpoint_behavior": {
+            "endpoint_behavior": 48,
+            "flag": 0,
+            "algo": 0
+          },
+          "srv6_sid_structure": {
+            "locator_block_length": 32,
+            "locator_node_length": 16,
+            "function_length": 0,
+            "argument_length": 80
+          }
+        },
+        {
+          "srv6_sid": "fc00:3:6::",
+          "srv6_endpoint_behavior": {
+            "endpoint_behavior": 48,
+            "flag": 0,
+            "algo": 130
+          },
+          "srv6_sid_structure": {
+            "locator_block_length": 32,
+            "locator_node_length": 16,
+            "function_length": 0,
+            "argument_length": 80
+          }
+        }
+      ],
+      "sr_algorithm": [
+        0,
+        1,
+        128,
+        129,
+        130
+      ],
+      "sr_local_block": {
+        "flags": 0,
+        "subranges": [
+          {
+            "range_size": 1000,
+            "label": 15000
+          }
+        ]
+      },
+      "srv6_capabilities_tlv": {
+        "o_flag": false
+      },
+      "is_adj_rib_in": false,
+      "is_prepolicy": false,
+      "prefixes": [
+        {
+          "_key": "2_0_2_0_0_fc00:0:6::1_128_0000.0000.0006",
+          "prefix": "fc00:0:6::1",
+          "prefix_attr_tlvs": {
+            "flags": {
+              "n_flag": true,
+              "r_flag": false,
+              "x_flag": false
+            }
+          },
+          "prefix_len": 128,
+          "prefix_metric": null
+        },
+        {
+          "_key": "2_0_0_0_0_10.0.0.6_32_0000.0000.0006",
+          "prefix": "10.0.0.6",
+          "prefix_attr_tlvs": {
+            "flags": {
+              "n_flag": true,
+              "r_flag": false,
+              "x_flag": false
+            },
+            "ls_prefix_sid": [
+              {
+                "algo": 0,
+                "flags": {
+                  "e_flag": false,
+                  "l_flag": false,
+                  "n_flag": true,
+                  "p_flag": false,
+                  "r_flag": false,
+                  "v_flag": false
+                },
+                "prefix_sid": 6
+              }
+            ],
+            "source_router_id": "10.0.0.6"
+          },
+          "prefix_len": 32,
+          "prefix_metric": null
+        }
+      ]
+    },
+    {
+      "_key": "2_0_0_0000.0000.0009",
+      "_id": "igp_node/2_0_0_0000.0000.0009",
+      "_rev": "_kk95kEG---",
+      "area_id": "49.0001",
+      "asn": 100000,
+      "domain_id": 0,
+      "flex_algo_definition": [
+        {
+          "flex_algo": 128,
+          "metric_type": 1,
+          "calculation_type": 0,
+          "priority": 128,
+          "sub_tlv": {
+            "include_any": [
+              2
+            ]
+          }
+        },
+        {
+          "flex_algo": 129,
+          "metric_type": 1,
+          "calculation_type": 0,
+          "priority": 128,
+          "sub_tlv": {
+            "include_any": [
+              4
+            ]
+          }
+        },
+        {
+          "flex_algo": 130,
+          "metric_type": 1,
+          "calculation_type": 0,
+          "priority": 128,
+          "sub_tlv": {
+            "include_any": [
+              8
+            ]
+          }
+        }
+      ],
+      "igp_router_id": "0000.0000.0009",
+      "ls_sr_capabilities": {
+        "flags": {
+          "i_flag": true,
+          "v_flag": false
+        },
+        "sr_capability_subtlv": [
+          {
+            "range": 64000,
+            "sid": 100000
+          }
+        ]
+      },
+      "mt_id_tlv": [
+        {
+          "o_flag": false,
+          "a_flag": false,
+          "mt_id": 0
+        },
+        {
+          "o_flag": false,
+          "a_flag": false,
+          "mt_id": 2
+        }
+      ],
+      "name": "xrd09",
+      "node_msd": [
+        {
+          "msd_type": 1,
+          "msd_value": 10
+        }
+      ],
+      "peer_asn": 100000,
+      "peer_ip": "10.0.0.1",
+      "prefix_attr_tlvs": null,
+      "protocol": "IS-IS Level 2",
+      "protocol_id": 2,
+      "router_id": "10.0.0.9",
+      "sids": [
+        {
+          "srv6_sid": "fc00:2:9::",
+          "srv6_endpoint_behavior": {
+            "endpoint_behavior": 48,
+            "flag": 0,
+            "algo": 129
+          },
+          "srv6_sid_structure": {
+            "locator_block_length": 32,
+            "locator_node_length": 16,
+            "function_length": 0,
+            "argument_length": 80
+          }
+        },
+        {
+          "srv6_sid": "fc00:1:9::",
+          "srv6_endpoint_behavior": {
+            "endpoint_behavior": 48,
+            "flag": 0,
+            "algo": 128
+          },
+          "srv6_sid_structure": {
+            "locator_block_length": 32,
+            "locator_node_length": 16,
+            "function_length": 0,
+            "argument_length": 80
+          }
+        },
+        {
+          "srv6_sid": "fc00:0:9::",
+          "srv6_endpoint_behavior": {
+            "endpoint_behavior": 48,
+            "flag": 0,
+            "algo": 0
+          },
+          "srv6_sid_structure": {
+            "locator_block_length": 32,
+            "locator_node_length": 16,
+            "function_length": 0,
+            "argument_length": 80
+          }
+        },
+        {
+          "srv6_sid": "fc00:3:9::",
+          "srv6_endpoint_behavior": {
+            "endpoint_behavior": 48,
+            "flag": 0,
+            "algo": 130
+          },
+          "srv6_sid_structure": {
+            "locator_block_length": 32,
+            "locator_node_length": 16,
+            "function_length": 0,
+            "argument_length": 80
+          }
+        }
+      ],
+      "sr_algorithm": [
+        0,
+        1,
+        128,
+        129,
+        130
+      ],
+      "sr_local_block": {
+        "flags": 0,
+        "subranges": [
+          {
+            "range_size": 1000,
+            "label": 15000
+          }
+        ]
+      },
+      "srv6_capabilities_tlv": {
+        "o_flag": false
+      },
+      "is_adj_rib_in": false,
+      "is_prepolicy": false,
+      "prefixes": [
+        {
+          "_key": "2_0_2_0_0_fc00:0:9::1_128_0000.0000.0009",
+          "prefix": "fc00:0:9::1",
+          "prefix_attr_tlvs": {
+            "flags": {
+              "n_flag": true,
+              "r_flag": false,
+              "x_flag": false
+            }
+          },
+          "prefix_len": 128,
+          "prefix_metric": null
+        },
+        {
+          "_key": "2_0_0_0_0_10.0.0.9_32_0000.0000.0009",
+          "prefix": "10.0.0.9",
+          "prefix_attr_tlvs": {
+            "flags": {
+              "n_flag": true,
+              "r_flag": false,
+              "x_flag": false
+            },
+            "ls_prefix_sid": [
+              {
+                "algo": 0,
+                "flags": {
+                  "e_flag": false,
+                  "l_flag": false,
+                  "n_flag": true,
+                  "p_flag": false,
+                  "r_flag": false,
+                  "v_flag": false
+                },
+                "prefix_sid": 9
+              },
+              {
+                "algo": 128,
+                "flags": {
+                  "e_flag": false,
+                  "l_flag": false,
+                  "n_flag": true,
+                  "p_flag": false,
+                  "r_flag": false,
+                  "v_flag": false
+                },
+                "prefix_sid": 928
+              },
+              {
+                "algo": 129,
+                "flags": {
+                  "e_flag": false,
+                  "l_flag": false,
+                  "n_flag": true,
+                  "p_flag": false,
+                  "r_flag": false,
+                  "v_flag": false
+                },
+                "prefix_sid": 929
+              },
+              {
+                "algo": 130,
+                "flags": {
+                  "e_flag": false,
+                  "l_flag": false,
+                  "n_flag": true,
+                  "p_flag": false,
+                  "r_flag": false,
+                  "v_flag": false
+                },
+                "prefix_sid": 930
+              }
+            ],
+            "source_router_id": "10.0.0.9"
+          },
+          "prefix_len": 32,
+          "prefix_metric": null
+        }
+      ]
+    },
+    {
+      "_key": "2_0_0_0000.0000.0018",
+      "_id": "igp_node/2_0_0_0000.0000.0018",
+      "_rev": "_kk95kEO---",
+      "area_id": "49.0001",
+      "asn": 100000,
+      "domain_id": 0,
+      "flex_algo_definition": [
+        {
+          "flex_algo": 128,
+          "metric_type": 1,
+          "calculation_type": 0,
+          "priority": 128,
+          "sub_tlv": {
+            "include_any": [
+              2
+            ]
+          }
+        },
+        {
+          "flex_algo": 129,
+          "metric_type": 1,
+          "calculation_type": 0,
+          "priority": 128,
+          "sub_tlv": {
+            "include_any": [
+              4
+            ]
+          }
+        },
+        {
+          "flex_algo": 130,
+          "metric_type": 1,
+          "calculation_type": 0,
+          "priority": 128,
+          "sub_tlv": {
+            "include_any": [
+              8
+            ]
+          }
+        }
+      ],
+      "igp_router_id": "0000.0000.0018",
+      "ls_sr_capabilities": {
+        "flags": {
+          "i_flag": true,
+          "v_flag": false
+        },
+        "sr_capability_subtlv": [
+          {
+            "range": 64000,
+            "sid": 100000
+          }
+        ]
+      },
+      "mt_id_tlv": [
+        {
+          "o_flag": false,
+          "a_flag": false,
+          "mt_id": 0
+        },
+        {
+          "o_flag": false,
+          "a_flag": false,
+          "mt_id": 2
+        }
+      ],
+      "name": "xrd18",
+      "node_msd": [
+        {
+          "msd_type": 1,
+          "msd_value": 10
+        }
+      ],
+      "peer_asn": 100000,
+      "peer_ip": "10.0.0.1",
+      "prefix_attr_tlvs": null,
+      "protocol": "IS-IS Level 2",
+      "protocol_id": 2,
+      "router_id": "10.0.0.18",
+      "sids": [
+        {
+          "srv6_sid": "fc00:2:18::",
+          "srv6_endpoint_behavior": {
+            "endpoint_behavior": 48,
+            "flag": 0,
+            "algo": 129
+          },
+          "srv6_sid_structure": {
+            "locator_block_length": 32,
+            "locator_node_length": 16,
+            "function_length": 0,
+            "argument_length": 80
+          }
+        },
+        {
+          "srv6_sid": "fc00:1:18::",
+          "srv6_endpoint_behavior": {
+            "endpoint_behavior": 48,
+            "flag": 0,
+            "algo": 128
+          },
+          "srv6_sid_structure": {
+            "locator_block_length": 32,
+            "locator_node_length": 16,
+            "function_length": 0,
+            "argument_length": 80
+          }
+        },
+        {
+          "srv6_sid": "fc00:0:18::",
+          "srv6_endpoint_behavior": {
+            "endpoint_behavior": 48,
+            "flag": 0,
+            "algo": 0
+          },
+          "srv6_sid_structure": {
+            "locator_block_length": 32,
+            "locator_node_length": 16,
+            "function_length": 0,
+            "argument_length": 80
+          }
+        },
+        {
+          "srv6_sid": "fc00:3:18::",
+          "srv6_endpoint_behavior": {
+            "endpoint_behavior": 48,
+            "flag": 0,
+            "algo": 130
+          },
+          "srv6_sid_structure": {
+            "locator_block_length": 32,
+            "locator_node_length": 16,
+            "function_length": 0,
+            "argument_length": 80
+          }
+        }
+      ],
+      "sr_algorithm": [
+        0,
+        1,
+        128,
+        129,
+        130
+      ],
+      "sr_local_block": {
+        "flags": 0,
+        "subranges": [
+          {
+            "range_size": 1000,
+            "label": 15000
+          }
+        ]
+      },
+      "srv6_capabilities_tlv": {
+        "o_flag": false
+      },
+      "is_adj_rib_in": false,
+      "is_prepolicy": false,
+      "prefixes": [
+        {
+          "_key": "2_0_2_0_0_fc00:0:18::1_128_0000.0000.0018",
+          "prefix": "fc00:0:18::1",
+          "prefix_attr_tlvs": {
+            "flags": {
+              "n_flag": true,
+              "r_flag": false,
+              "x_flag": false
+            }
+          },
+          "prefix_len": 128,
+          "prefix_metric": null
+        },
+        {
+          "_key": "2_0_0_0_0_10.0.0.18_32_0000.0000.0018",
+          "prefix": "10.0.0.18",
+          "prefix_attr_tlvs": {
+            "flags": {
+              "n_flag": true,
+              "r_flag": false,
+              "x_flag": false
+            },
+            "ls_prefix_sid": [
+              {
+                "algo": 0,
+                "flags": {
+                  "e_flag": false,
+                  "l_flag": false,
+                  "n_flag": true,
+                  "p_flag": false,
+                  "r_flag": false,
+                  "v_flag": false
+                },
+                "prefix_sid": 18
+              }
+            ],
+            "source_router_id": "10.0.0.18"
+          },
+          "prefix_len": 32,
+          "prefix_metric": null
+        }
+      ]
+    },
+    {
+      "_key": "2_0_0_0000.0000.0025",
+      "_id": "igp_node/2_0_0_0000.0000.0025",
+      "_rev": "_kk95kEu---",
+      "area_id": "49.0001",
+      "asn": 100000,
+      "domain_id": 0,
+      "flex_algo_definition": null,
+      "igp_router_id": "0000.0000.0025",
+      "ls_sr_capabilities": {
+        "flags": {
+          "i_flag": true,
+          "v_flag": false
+        },
+        "sr_capability_subtlv": [
+          {
+            "range": 64000,
+            "sid": 100000
+          }
+        ]
+      },
+      "mt_id_tlv": [
+        {
+          "o_flag": false,
+          "a_flag": false,
+          "mt_id": 0
+        },
+        {
+          "o_flag": false,
+          "a_flag": false,
+          "mt_id": 2
+        }
+      ],
+      "name": "xrd25",
+      "node_msd": [
+        {
+          "msd_type": 1,
+          "msd_value": 10
+        }
+      ],
+      "peer_asn": 100000,
+      "peer_ip": "10.0.0.1",
+      "prefix_attr_tlvs": null,
+      "protocol": "IS-IS Level 2",
+      "protocol_id": 2,
+      "router_id": "10.0.0.25",
+      "sids": [
+        {
+          "srv6_sid": "fc00:0:25::",
+          "srv6_endpoint_behavior": {
+            "endpoint_behavior": 48,
+            "flag": 0,
+            "algo": 0
+          },
+          "srv6_sid_structure": {
+            "locator_block_length": 32,
+            "locator_node_length": 16,
+            "function_length": 0,
+            "argument_length": 80
+          }
+        }
+      ],
+      "sr_algorithm": [
+        0,
+        1
+      ],
+      "sr_local_block": {
+        "flags": 0,
+        "subranges": [
+          {
+            "range_size": 1000,
+            "label": 15000
+          }
+        ]
+      },
+      "srv6_capabilities_tlv": {
+        "o_flag": false
+      },
+      "is_adj_rib_in": false,
+      "is_prepolicy": false,
+      "prefixes": [
+        {
+          "_key": "2_0_2_0_0_fc00:0:25::1_128_0000.0000.0025",
+          "prefix": "fc00:0:25::1",
+          "prefix_attr_tlvs": {
+            "flags": {
+              "n_flag": true,
+              "r_flag": false,
+              "x_flag": false
+            }
+          },
+          "prefix_len": 128,
+          "prefix_metric": null
+        },
+        {
+          "_key": "2_0_0_0_0_10.0.0.25_32_0000.0000.0025",
+          "prefix": "10.0.0.25",
+          "prefix_attr_tlvs": {
+            "flags": {
+              "n_flag": true,
+              "r_flag": false,
+              "x_flag": false
+            },
+            "ls_prefix_sid": [
+              {
+                "algo": 0,
+                "flags": {
+                  "e_flag": false,
+                  "l_flag": false,
+                  "n_flag": true,
+                  "p_flag": false,
+                  "r_flag": false,
+                  "v_flag": false
+                },
+                "prefix_sid": 25
+              }
+            ],
+            "source_router_id": "10.0.0.25"
+          },
+          "prefix_len": 32,
+          "prefix_metric": null
+        }
+      ]
+    }
+  ]
+}

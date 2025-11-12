@@ -1,0 +1,25 @@
+{
+  "collection": "igp_domain",
+  "type": "collection",
+  "count": 2,
+  "data": [
+    {
+      "_key": "1_0_100000",
+      "_id": "igp_domain/1_0_100000",
+      "_rev": "_kk95jcC---",
+      "asn": 100000,
+      "protocol_id": 1,
+      "domain_id": 0,
+      "protocol": "IS-IS Level 1"
+    },
+    {
+      "_key": "2_0_100000",
+      "_id": "igp_domain/2_0_100000",
+      "_rev": "_kk95jd6---",
+      "asn": 100000,
+      "protocol_id": 2,
+      "domain_id": 0,
+      "protocol": "IS-IS Level 2"
+    }
+  ]
+}
