@@ -28,7 +28,8 @@ def process_path_data(
         
         # Extract SID locators filtered by algo
         locators = []
-        for node in path_data:
+        for node in path_data[1:]:
+        #for node in path_data:
             # print(f"Processing node: {json.dumps(node, indent=2)}")
             # Check for vertex and sids in the vertex object
             if 'vertex' in node and 'sids' in node['vertex']:
